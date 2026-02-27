@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card">
+  <h2>Staff • Student</h2>
+  <p class="sub">{{ student.roll }} • {{ student.name }} • {{ student.department }}</p>
+
+  <!-- NAV TABS -->
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <a class="btn" href="/staff">Back</a>
+    <a class="btn" href="/staff/student/{{ student.id }}?tab=profile">Profile</a>
+    <a class="btn" href="/staff/student/{{ student.id }}?tab=academics">Academics</a>
+    <a class="btn" href="/staff/student/{{ student.id }}?tab=skills">Skills</a>
+    <a class="btn" href="/staff/student/{{ student.id }}?tab=achievements">Achievements</a>
+    <a class="btn btn-teal" href="/staff/student/{{ student.id }}?tab=edit">Edit</a>
+  </div>
+
+  <div class="hr"></div>
+
+  <!-- ================= PROFILE ================= -->
+  {% if tab == "profile" %}
+    <h3>Profile</h3>
+    <div class="toast ok">
+      <b>Score:</b> {{ score }} |
+      <b>CGPA:</b> {{ cgpa if cgpa is not none else "-" }}
+    </div>
+
+    <p><b>Login Email:</b> {{ student.user_email }}</p>
+    <p><b>Contact Email:</b> {{ student.contact_email }}</p>
+    <p><b>Phone:</b> {{ student.phone }}</p>
+    <p><b>Parent Phone:</b> {{ student.parent_phone }}</p>
+    <p><b>Mentor:</b> {{ student.mentor_name }}</p>
+    <p><b>Address:</b> {{ student.address }}</p>
+
+    <p><b>Scholar Type:</b> {{ student.scholar_type }}</p>
+    {% if student.scholar_type == "Hosteller" %}
+      <p><b>Warden:</b> {{ student.warden_name }}</p>
+      <p><b>Room:</b> {{ student.room_no }}</p>
+    {% endif %}
+
+  <!-- ================= ACADEMICS ================= -->
+  {% elif tab == "academics" %}
+    <h3>Academics</h3>
+    <div class="toast ok">
+      <b>Score:</b> {{ score }} |
+      <b>CGPA:</b> {{ cgpa if cgpa is not none else "-" }}
+    </div>
+
+    <div class="kpi">
+      <div class="k"><div class="t">Working Days</div><div class="v">{{ total_days }}</div></div>
+      <div class="k"><div class="t">Present</div><div class="v">{{ present }}</div></div>
+      <div class="k"><div class="t">Attendance</div><div class="v">{{ attendance_pct }}%</div></div>
+    </div>
+
+    <div class="hr"></div>
+
+    <p><b>Semester Start:</b> {{ student.semester_start }}</p>
+    <p><b>Present Days:</b> {{ student.present_days }}</p>
+    <p><b>Arrears:</b> {{ student.arrear_count }}</p>
+
+    <div class="hr"></div>
+
+    <h3>Semester SGPA</h3>
+    <table class="table">
+      <thead>
+        <tr><th>Semester</th><th>SGPA</th></tr>
+      </thead>
+      <tbody>
+        {% for i in range(1,9) %}
+        <tr>
+          <td>Sem {{ i }}</td>
+          <td>
+            {{ (student|attr('sem' ~ i)) if (student|attr('sem' ~ i)) is not none else '-' }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="hr"></div>
+
+    <h3>SGPA Graph</h3>
+    <canvas id="sgpaChart" height="90"></canvas>
+
+    <!-- ✅ FIXED SCRIPT (NO JS ERRORS) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      const sgpaData = JSON.parse('{{ sgpas|tojson|safe }}');
+
+      new Chart(document.getElementById("sgpaChart"), {
+        type: "line",
+        data: {
+          labels: ["S1","S2","S3","S4","S5","S6","S7","S8"],
+          datasets: [{
+            label: "SGPA",
+            data: sgpaData,
+            spanGaps: true,
+            borderWidth: 2
+          }]
+        },
+        options: {
+          scales: { y: { beginAtZero: true, max: 10 } }
+        }
+      });
+    </script>
+
+  <!-- ================= SKILLS ================= -->
+  {% elif tab == "skills" %}
+    <h3>Skills</h3>
+    <div class="toast ok"><b>Score:</b> {{ score }}</div>
+
+    <table class="table">
+      <thead>
+        <tr><th>Skill</th><th>Levels Completed</th></tr>
+      </thead>
+      <tbody>
+        {% for s in skills %}
+        <tr>
+          <td>{{ s.skill_name }}</td>
+          <td>{{ s.levels_completed }}</td>
+        </tr>
+        {% endfor %}
+        {% if skills|length == 0 %}
+          <tr><td colspan="2">No skills added.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+
+  <!-- ================= EDIT ================= -->
+  {% elif tab == "edit" %}
+    <h3>Edit Student</h3>
+    <div class="toast ok"><b>Score:</b> {{ score }}</div>
+
+    <form method="post">
+      <input type="hidden" name="form_type" value="edit">
+
+      <h3>Profile</h3>
+      <div class="row">
+        <div class="field"><label>Name</label><input name="name" value="{{ student.name }}" required></div>
+        <div class="field"><label>Contact Email</label><input name="contact_email" value="{{ student.contact_email }}" required></div>
+      </div>
+
+      <div class="row">
+        <div class="field"><label>Phone</label><input name="phone" value="{{ student.phone }}" required></div>
+        <div class="field"><label>Parent Phone</label><input name="parent_phone" value="{{ student.parent_phone }}" required></div>
+      </div>
+
+      <div class="row">
+        <div class="field"><label>Department</label><input name="department" value="{{ student.department }}" required></div>
+        <div class="field"><label>Mentor Name</label><input name="mentor_name" value="{{ student.mentor_name }}" required></div>
+      </div>
+
+      <div class="field"><label>Address</label><input name="address" value="{{ student.address }}" required></div>
+
+      <div class="hr"></div>
+
+      <h3>Hostel</h3>
+      <div class="row">
+        <div class="field">
+          <label>Scholar Type</label>
+          <select name="scholar_type">
+            <option value="Day Scholar" {% if student.scholar_type == "Day Scholar" %}selected{% endif %}>Day Scholar</option>
+            <option value="Hosteller" {% if student.scholar_type == "Hosteller" %}selected{% endif %}>Hosteller</option>
+          </select>
+        </div>
+        <div class="field"><label>Warden</label><input name="warden_name" value="{{ student.warden_name }}"></div>
+      </div>
+
+      <div class="row">
+        <div class="field"><label>Room No</label><input name="room_no" value="{{ student.room_no }}"></div>
+        <div class="field"><label>Arrears</label><input type="number" min="0" name="arrear_count" value="{{ student.arrear_count }}"></div>
+      </div>
+
+      <div class="hr"></div>
+
+      <h3>Academics</h3>
+      <div class="row">
+        <div class="field"><label>Semester Start</label><input name="semester_start" value="{{ student.semester_start }}"></div>
+        <div class="field"><label>Present Days</label><input type="number" min="0" name="present_days" value="{{ student.present_days }}"></div>
+      </div>
+
+      <div class="row">
+        {% for i in range(1,9) %}
+        <div class="field">
+          <label>Sem {{ i }}</label>
+          <input name="sem{{ i }}" value="{{ (student|attr('sem' ~ i)) if (student|attr('sem' ~ i)) is not none else '' }}">
+        </div>
+        {% endfor %}
+      </div>
+
+      <button class="btn btn-teal" type="submit">Save Changes</button>
+
+      {% if message %}<div class="toast ok">{{ message }}</div>{% endif %}
+      {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
+    </form>
+
+  <!-- ================= ACHIEVEMENTS ================= -->
+  {% else %}
+    <h3>Achievements & Certifications</h3>
+    <div class="toast ok"><b>Score:</b> {{ score }}</div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Achievements</h3>
+        <table class="table">
+          <thead><tr><th>Title</th><th>Level</th><th>Date</th></tr></thead>
+          <tbody>
+            {% for a in achievements %}
+            <tr>
+              <td>{{ a.title }}</td>
+              <td>{{ a.level or "-" }}</td>
+              <td>{{ a.date_str or "-" }}</td>
+            </tr>
+            {% endfor %}
+            {% if achievements|length == 0 %}
+              <tr><td colspan="3">No achievements.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Certifications</h3>
+        <table class="table">
+          <thead><tr><th>Name</th><th>Provider</th><th>Date</th></tr></thead>
+          <tbody>
+            {% for c in certs %}
+            <tr>
+              <td>{{ c.name }}</td>
+              <td>{{ c.provider or "-" }}</td>
+              <td>{{ c.issue_date or "-" }}</td>
+            </tr>
+            {% endfor %}
+            {% if certs|length == 0 %}
+              <tr><td colspan="3">No certifications.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="max-width:780px; margin:auto;">
+  <h2>Login</h2>
+  <p class="sub">Use your role email and password.</p>
+
+  <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+    <a class="btn" href="/register/student">Student Register</a>
+    <a class="btn" href="/register/staff">Staff Register</a>
+  </div>
+
+  <form method="post">
+    <div class="row">
+      <div class="field">
+        <label>Role</label>
+        <select name="role" required>
+          <option value="">Select</option>
+          <option value="student">Student</option>
+          <option value="staff">Staff</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input name="email" placeholder='"name".student@gmail.com / "name".staff@gmail.com' required>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Password</label>
+      <input type="password" name="password" required>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Login</button>
+
+    {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
+  </form>
+</div>
+{% endblock %}

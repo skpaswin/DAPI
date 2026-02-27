@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card" style="max-width:1100px; margin:auto;">
+  <h2>Student Portal</h2>
+  <p class="sub">{{ student.roll }} • {{ student.name }}</p>
+
+  <!-- TABS -->
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+    <a class="btn" href="/student?tab=profile">Profile</a>
+    <a class="btn" href="/student?tab=academics">Academics</a>
+    <a class="btn" href="/student?tab=skills">Skills</a>
+    <a class="btn" href="/student?tab=achievements">Achievements</a>
+  </div>
+
+  <div class="hr"></div>
+
+  <!-- ================= PROFILE ================= -->
+  {% if tab == "profile" %}
+  <h3>Profile</h3>
+
+  <form method="post">
+    <input type="hidden" name="form_type" value="profile">
+
+    <div class="row">
+      <div class="field"><label>Name</label><input name="name" value="{{ student.name }}" required></div>
+      <div class="field"><label>Contact Email</label><input name="contact_email" value="{{ student.contact_email }}" required></div>
+    </div>
+
+    <div class="row">
+      <div class="field"><label>Phone</label><input name="phone" value="{{ student.phone }}" required></div>
+      <div class="field"><label>Parent Phone</label><input name="parent_phone" value="{{ student.parent_phone }}" required></div>
+    </div>
+
+    <div class="row">
+      <div class="field"><label>Department</label><input name="department" value="{{ student.department }}" required></div>
+      <div class="field"><label>Mentor Name</label><input name="mentor_name" value="{{ student.mentor_name }}" required></div>
+    </div>
+
+    <div class="field"><label>Address</label><input name="address" value="{{ student.address }}" required></div>
+
+    <button class="btn btn-teal" type="submit">Save Profile</button>
+    {% if message %}<div class="toast ok">{{ message }}</div>{% endif %}
+    {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
+  </form>
+
+  <!-- ================= ACADEMICS ================= -->
+  {% elif tab == "academics" %}
+  <h3>Academics</h3>
+
+  <div class="toast ok">
+    <b>CGPA:</b> {{ cgpa if cgpa is not none else "-" }} |
+    <b>Placement Score:</b> {{ score }}
+  </div>
+
+  <form method="post">
+    <input type="hidden" name="form_type" value="academics">
+
+    <div class="row">
+      <div class="field"><label>Semester Start</label><input name="semester_start" value="{{ student.semester_start }}" required></div>
+      <div class="field"><label>Present Days</label><input type="number" min="0" name="present_days" value="{{ student.present_days }}" required></div>
+    </div>
+
+    <div class="row">
+      <div class="field"><label>Arrear Count</label><input type="number" min="0" name="arrear_count" value="{{ student.arrear_count }}" required></div>
+      <div class="field"><label>Attendance %</label><input value="{{ attendance_pct }}%" disabled></div>
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="row">
+      {% for i in range(1,9) %}
+      <div class="field">
+        <label>Sem {{ i }} SGPA</label>
+        <input name="sem{{ i }}"
+          value="{{ (student|attr('sem' ~ i)) if (student|attr('sem' ~ i)) is not none else '' }}">
+      </div>
+      {% endfor %}
+    </div>
+
+    <button class="btn btn-teal" type="submit">Save Academics</button>
+    {% if message %}<div class="toast ok">{{ message }}</div>{% endif %}
+    {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
+  </form>
+
+  <div class="hr"></div>
+
+  <h3>SGPA Graph</h3>
+  <canvas id="sgpaChart" height="90"></canvas>
+
+  <!-- ✅ FIXED SCRIPT (NO JS ERRORS) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const sgpaData = JSON.parse('{{ sgpas|tojson|safe }}');
+
+    new Chart(document.getElementById("sgpaChart"), {
+      type: "line",
+      data: {
+        labels: ["Sem1","Sem2","Sem3","Sem4","Sem5","Sem6","Sem7","Sem8"],
+        datasets: [{
+          label: "SGPA",
+          data: sgpaData,
+          spanGaps: true,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        scales: { y: { beginAtZero: true, max: 10 } }
+      }
+    });
+  </script>
+
+  <!-- ================= SKILLS ================= -->
+  {% elif tab == "skills" %}
+  <h3>Skills</h3>
+
+  <div class="toast ok"><b>Placement Score:</b> {{ score }}</div>
+
+  <form method="post">
+    <input type="hidden" name="form_type" value="skill_add">
+
+    <div class="row">
+      <div class="field"><label>Skill Name</label><input name="skill_name" required></div>
+      <div class="field"><label>Levels Completed (0–10)</label><input type="number" min="0" max="10" name="levels_completed" value="0" required></div>
+    </div>
+
+    <button class="btn btn-teal" type="submit">Add Skill</button>
+  </form>
+
+  <div class="hr"></div>
+
+  <table class="table">
+    <thead><tr><th>Skill</th><th>Levels</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for s in skills %}
+      <tr>
+        <td>{{ s.skill_name }}</td>
+        <td>{{ s.levels_completed }}</td>
+        <td>
+          <form method="post">
+            <input type="hidden" name="form_type" value="skill_delete">
+            <input type="hidden" name="id" value="{{ s.id }}">
+            <button class="btn btn-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      {% if skills|length == 0 %}
+        <tr><td colspan="3">No skills added.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <!-- ================= ACHIEVEMENTS ================= -->
+  {% else %}
+  <h3>Achievements & Certifications</h3>
+
+  <div class="toast ok"><b>Placement Score:</b> {{ score }}</div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Achievements</h3>
+      <form method="post">
+        <input type="hidden" name="form_type" value="ach_add">
+        <div class="field"><label>Title</label><input name="title" required></div>
+        <button class="btn btn-teal">Add</button>
+      </form>
+
+      <div class="hr"></div>
+
+      <table class="table">
+        <thead><tr><th>Title</th><th>Action</th></tr></thead>
+        <tbody>
+          {% for a in achievements %}
+          <tr>
+            <td>{{ a.title }}</td>
+            <td>
+              <form method="post">
+                <input type="hidden" name="form_type" value="ach_delete">
+                <input type="hidden" name="id" value="{{ a.id }}">
+                <button class="btn btn-danger">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+          {% if achievements|length == 0 %}
+            <tr><td colspan="2">No achievements.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Certifications</h3>
+      <form method="post">
+        <input type="hidden" name="form_type" value="cert_add">
+        <div class="field"><label>Name</label><input name="name" required></div>
+        <button class="btn btn-teal">Add</button>
+      </form>
+
+      <div class="hr"></div>
+
+      <table class="table">
+        <thead><tr><th>Name</th><th>Action</th></tr></thead>
+        <tbody>
+          {% for c in certs %}
+          <tr>
+            <td>{{ c.name }}</td>
+            <td>
+              <form method="post">
+                <input type="hidden" name="form_type" value="cert_delete">
+                <input type="hidden" name="id" value="{{ c.id }}">
+                <button class="btn btn-danger">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+          {% if certs|length == 0 %}
+            <tr><td colspan="2">No certifications.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

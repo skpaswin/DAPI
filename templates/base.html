@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>DAPI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-inner">
+    <div class="brand">
+      <span style="font-size:18px">📘 DAPI</span>
+      <span class="badge">Digital Academic Progress Index</span>
+    </div>
+
+    <div style="display:flex; gap:10px; align-items:center;">
+      {% if session.get("role") == "student" %}
+        <a class="btn" href="/student?tab=profile">Portal</a>
+      {% elif session.get("role") == "staff" %}
+        <a class="btn" href="/staff">Students</a>
+      {% endif %}
+      {% if session.get("role") %}
+        <a class="btn btn-danger" href="/logout">Logout</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

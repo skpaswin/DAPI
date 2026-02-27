@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="max-width:780px; margin:auto;">
+  <h2>Staff Register</h2>
+  <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+  <a class="btn btn-danger" href="/logout">Logout</a>
+  <a class="btn" href="/">Back to Login</a>
+</div>
+
+  <p class="sub">Email must end with <b>.staff@gmail.com</b></p>
+
+  <form method="post">
+    <div class="row">
+      <div class="field"><label>Email</label><input name="email" placeholder='"name".staff@gmail.com' required></div>
+      <div class="field"><label>Password</label><input type="password" name="password" required></div>
+    </div>
+    <button class="btn btn-teal" type="submit">Create Staff Account</button>
+
+    {% if message %}<div class="toast ok">{{ message }}</div>{% endif %}
+    {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
+  </form>
+</div>
+{% endblock %}

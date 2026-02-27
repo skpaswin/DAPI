@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Student Register</h2>
+  <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+  <a class="btn btn-danger" href="/logout">Logout</a>
+  <a class="btn" href="/">Back to Login</a>
+</div>
+
+  <p class="sub">Email must end with <b>.student@gmail.com</b></p>
+
+  <form method="post">
+
+    <h3>Login</h3>
+    <div class="row">
+      <div class="field"><label>Login Email</label><input name="login_email" placeholder='"name".student@gmail.com' required></div>
+      <div class="field"><label>Password</label><input type="password" name="login_pass" required></div>
+    </div>
+
+    <div class="hr"></div>
+
+    <h3>Profile</h3>
+    <div class="row">
+      <div class="field"><label>Student ID</label><input name="student_id" required></div>
+      <div class="field"><label>Roll</label><input name="roll" required></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Name</label><input name="name" required></div>
+      <div class="field"><label>Contact Email</label><input name="contact_email" required></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Phone</label><input name="phone" required></div>
+      <div class="field"><label>Parent Phone</label><input name="parent_phone" required></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Department</label><input name="department" required></div>
+      <div class="field"><label>Mentor Name</label><input name="mentor_name" required></div>
+    </div>
+    <div class="field"><label>Address</label><input name="address" required></div>
+
+    <div class="row">
+      <div class="field">
+        <label>Hosteller / Day Scholar</label>
+        <select name="scholar_type" required>
+          <option value="Day Scholar">Day Scholar</option>
+          <option value="Hosteller">Hosteller</option>
+        </select>
+      </div>
+      <div class="field"><label>Warden Name (if Hosteller)</label><input name="warden_name"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Room No (if Hosteller)</label><input name="room_no"></div>
+      <div class="field"><label>Arrear Count</label><input type="number" min="0" name="arrear_count" value="0" required></div>
+    </div>
+
+    <div class="row">
+      <div class="field"><label>10th</label><input name="tenth" required></div>
+      <div class="field"><label>12th</label><input name="twelfth" required></div>
+    </div>
+
+    <div class="hr"></div>
+
+    <h3>Attendance</h3>
+    <div class="row">
+      <div class="field"><label>Semester Start (YYYY-MM-DD)</label><input name="semester_start" value="2026-01-01" required></div>
+      <div class="field"><label>Present Days</label><input type="number" min="0" name="present_days" value="0" required></div>
+    </div>
+
+    <div class="hr"></div>
+
+    <h3>Semester SGPA (optional)</h3>
+    <div class="row">
+      {% for i in range(1,9) %}
+      <div class="field"><label>Sem {{ i }}</label><input name="sem{{ i }}"></div>
+      {% endfor %}
+    </div>
+
+    <button class="btn btn-teal" type="submit">Register</button>
+    {% if message %}<div class="toast ok">{{ message }}</div>{% endif %}
+    {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
+  </form>
+</div>
+{% endblock %}

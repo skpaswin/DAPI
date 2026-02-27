@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Staff Dashboard</h2>
+  <p class="sub">Students grouped by department. Click View to open tabs.</p>
+
+  <form method="post">
+    <div class="row">
+      <div class="field"><label>Search</label><input name="query" value="{{ query }}" placeholder="Roll / Name / Dept / Email"></div>
+      <div class="field" style="display:flex; align-items:end;"><button class="btn btn-primary" type="submit">Search</button></div>
+    </div>
+  </form>
+
+  <div class="hr"></div>
+
+  {% for dept, students in dept_map.items() %}
+    <h3>{{ dept }}</h3>
+    <table class="table">
+      <thead><tr><th>Roll</th><th>Name</th><th>Email</th><th>Score</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td>{{ s.roll }}</td>
+          <td>{{ s.name }}</td>
+          <td>{{ s.user_email }}</td>
+          <td>{{ s.placement_score }}</td>
+          <td><a class="btn btn-teal" href="/staff/student/{{ s.id }}?tab=profile">View</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="hr"></div>
+  {% endfor %}
+</div>
+{% endblock %}
