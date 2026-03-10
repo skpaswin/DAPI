@@ -75,9 +75,175 @@
       {% endfor %}
     </div>
 
+    <div class="hr"></div>
+
+    <h3>Skills (optional)</h3>
+    <div id="skills-container">
+      <div class="card" style="margin-bottom:12px;">
+        <div class="row" style="align-items:flex-end; gap:10px; flex-wrap:wrap;">
+          <div class="field" style="flex:2"><label>Skill</label><input name="skill_name[]"></div>
+          <div class="field" style="flex:1"><label>Levels</label><input type="number" min="0" max="10" name="skill_levels[]" value="1"></div>
+          <div class="field" style="flex:1"><label>&nbsp;</label><button type="button" class="btn btn-danger remove-skill">Remove</button></div>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="btn btn-primary" id="add-skill-btn">+ Add skill</button>
+
+    <div class="hr"></div>
+
+    <h3>Achievements (optional)</h3>
+    <div id="achievements-container">
+      <div class="card" style="margin-bottom:12px;">
+        <div class="row" style="align-items:flex-end; gap:10px; flex-wrap:wrap;">
+          <div class="field" style="flex:2"><label>Title</label><input name="ach_title[]"></div>
+          <div class="field" style="flex:1"><label>Completed</label><input type="number" min="0" max="10" name="ach_level[]" value="1"></div>
+          <div class="field" style="flex:2"><label>Dates</label><div class="ach-dates"></div></div>
+          <div class="field" style="flex:1"><label>&nbsp;</label><button type="button" class="btn btn-danger remove-ach">Remove</button></div>
+        </div>
+        <div class="field"><label>Description (optional)</label><input name="ach_desc[]"></div>
+        <input type="hidden" name="ach_dates[]">
+      </div>
+    </div>
+    <button type="button" class="btn btn-primary" id="add-ach-btn">+ Add achievement</button>
+
+    <div class="hr"></div>
+
+    <h3>Certifications (optional)</h3>
+    <div id="certs-container">
+      <div class="card" style="margin-bottom:12px;">
+        <div class="row" style="align-items:flex-end; gap:10px; flex-wrap:wrap;">
+          <div class="field" style="flex:2"><label>Name</label><input name="cert_name[]"></div>
+          <div class="field" style="flex:2"><label>Provider</label><input name="cert_provider[]"></div>
+          <div class="field" style="flex:2"><label>Issued Date</label><input type="date" name="cert_issue_date[]"></div>
+          <div class="field" style="flex:1"><label>&nbsp;</label><button type="button" class="btn btn-danger remove-cert">Remove</button></div>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="btn btn-primary" id="add-cert-btn">+ Add certification</button>
+
+    <div class="hr"></div>
+
     <button class="btn btn-teal" type="submit">Register</button>
     {% if message %}<div class="toast ok">{{ message }}</div>{% endif %}
     {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
   </form>
+
+  <template id="ach-template">
+    <div class="card" style="margin-bottom:12px;">
+      <div class="row" style="align-items:flex-end; gap:10px; flex-wrap:wrap;">
+        <div class="field" style="flex:2"><label>Title</label><input name="ach_title[]"></div>
+        <div class="field" style="flex:1"><label>Completed</label><input type="number" min="0" max="10" name="ach_level[]" value="1"></div>
+        <div class="field" style="flex:2"><label>Dates</label><div class="ach-dates"></div></div>
+        <div class="field" style="flex:1"><label>&nbsp;</label><button type="button" class="btn btn-danger remove-ach">Remove</button></div>
+      </div>
+      <div class="field"><label>Description (optional)</label><input name="ach_desc[]"></div>
+      <input type="hidden" name="ach_dates[]">
+    </div>
+  </template>
+
+  <template id="skill-template">
+    <div class="card" style="margin-bottom:12px;">
+      <div class="row" style="align-items:flex-end; gap:10px; flex-wrap:wrap;">
+        <div class="field" style="flex:2"><label>Skill</label><input name="skill_name[]"></div>
+        <div class="field" style="flex:1"><label>Levels</label><input type="number" min="0" max="10" name="skill_levels[]" value="1"></div>
+        <div class="field" style="flex:1"><label>&nbsp;</label><button type="button" class="btn btn-danger remove-skill">Remove</button></div>
+      </div>
+    </div>
+  </template>
+
+  <template id="cert-template">
+    <div class="card" style="margin-bottom:12px;">
+      <div class="row" style="align-items:flex-end; gap:10px; flex-wrap:wrap;">
+        <div class="field" style="flex:2"><label>Name</label><input name="cert_name[]"></div>
+        <div class="field" style="flex:2"><label>Provider</label><input name="cert_provider[]"></div>
+        <div class="field" style="flex:2"><label>Issued Date</label><input type="date" name="cert_issue_date[]"></div>
+        <div class="field" style="flex:1"><label>&nbsp;</label><button type="button" class="btn btn-danger remove-cert">Remove</button></div>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    const achContainer = document.getElementById('achievements-container');
+    const achTemplate = document.getElementById('ach-template');
+    const certContainer = document.getElementById('certs-container');
+    const certTemplate = document.getElementById('cert-template');
+    const skillsContainer = document.getElementById('skills-container');
+    const skillTemplate = document.getElementById('skill-template');
+
+    function updateAchDates(row) {
+      const levelInput = row.querySelector('input[name="ach_level[]"]');
+      const datesContainer = row.querySelector('.ach-dates');
+      const hidden = row.querySelector('input[name="ach_dates[]"]');
+
+      const level = Math.max(0, Math.min(10, parseInt(levelInput.value) || 0));
+      datesContainer.innerHTML = '';
+
+      const dates = [];
+      for (let i = 1; i <= level; i++) {
+        const wrapper = document.createElement('div');
+        wrapper.style.marginBottom = '6px';
+        const label = document.createElement('label');
+        label.textContent = `Date ${i}`;
+        const input = document.createElement('input');
+        input.type = 'date';
+        input.style.width = '100%';
+        input.addEventListener('change', () => {
+          const all = Array.from(datesContainer.querySelectorAll('input')).map(i=>i.value).filter(Boolean);
+          hidden.value = all.join(',');
+        });
+        wrapper.appendChild(label);
+        wrapper.appendChild(input);
+        datesContainer.appendChild(wrapper);
+        dates.push('');
+      }
+      hidden.value = dates.join(',');
+    }
+
+    function addAchievement() {
+      const row = achTemplate.content.firstElementChild.cloneNode(true);
+      const levelInput = row.querySelector('input[name="ach_level[]"]');
+      updateAchDates(row);
+      levelInput.addEventListener('input', () => updateAchDates(row));
+      row.querySelector('.remove-ach').addEventListener('click', () => row.remove());
+      achContainer.appendChild(row);
+    }
+
+    function addCertification() {
+      const row = certTemplate.content.firstElementChild.cloneNode(true);
+      row.querySelector('.remove-cert').addEventListener('click', () => row.remove());
+      certContainer.appendChild(row);
+    }
+
+    function addSkill() {
+      const row = skillTemplate.content.firstElementChild.cloneNode(true);
+      row.querySelector('.remove-skill').addEventListener('click', () => row.remove());
+      skillsContainer.appendChild(row);
+    }
+
+    document.getElementById('add-ach-btn').addEventListener('click', addAchievement);
+    document.getElementById('add-cert-btn').addEventListener('click', addCertification);
+    document.getElementById('add-skill-btn').addEventListener('click', addSkill);
+
+    // Initialize any pre-existing rows (from server-side HTML)
+    achContainer.querySelectorAll('.remove-ach').forEach(btn => {
+      const row = btn.closest('.card');
+      btn.addEventListener('click', () => row.remove());
+      const levelInput = row.querySelector('input[name="ach_level[]"]');
+      if (levelInput) {
+        levelInput.addEventListener('input', () => updateAchDates(row));
+        updateAchDates(row);
+      }
+    });
+
+    certContainer.querySelectorAll('.remove-cert').forEach(btn => {
+      const row = btn.closest('.card');
+      btn.addEventListener('click', () => row.remove());
+    });
+
+    skillsContainer.querySelectorAll('.remove-skill').forEach(btn => {
+      const row = btn.closest('.card');
+      btn.addEventListener('click', () => row.remove());
+    });
+  </script>
 </div>
 {% endblock %}

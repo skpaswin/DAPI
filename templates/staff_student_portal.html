@@ -12,10 +12,14 @@
     <a class="btn" href="/staff/student/{{ student.id }}?tab=academics">Academics</a>
     <a class="btn" href="/staff/student/{{ student.id }}?tab=skills">Skills</a>
     <a class="btn" href="/staff/student/{{ student.id }}?tab=achievements">Achievements</a>
+    <a class="btn" href="/staff/student/{{ student.id }}?tab=certifications">Certifications</a>
     <a class="btn btn-teal" href="/staff/student/{{ student.id }}?tab=edit">Edit</a>
   </div>
 
   <div class="hr"></div>
+
+  {% if message %}<div class="toast ok">{{ message }}</div>{% endif %}
+  {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
 
   <!-- ================= PROFILE ================= -->
   {% if tab == "profile" %}
@@ -49,33 +53,14 @@
     <div class="kpi">
       <div class="k"><div class="t">Working Days</div><div class="v">{{ total_days }}</div></div>
       <div class="k"><div class="t">Present</div><div class="v">{{ present }}</div></div>
+      <div class="k"><div class="t">Semester Start</div><div class="v">{{ student.semester_start }}</div></div>
+      <div class="k"><div class="t">Arrears</div><div class="v">{{ student.arrear_count }}</div></div>
       <div class="k"><div class="t">Attendance</div><div class="v">{{ attendance_pct }}%</div></div>
     </div>
 
     <div class="hr"></div>
 
-    <p><b>Semester Start:</b> {{ student.semester_start }}</p>
-    <p><b>Present Days:</b> {{ student.present_days }}</p>
-    <p><b>Arrears:</b> {{ student.arrear_count }}</p>
-
     <div class="hr"></div>
-
-    <h3>Semester SGPA</h3>
-    <table class="table">
-      <thead>
-        <tr><th>Semester</th><th>SGPA</th></tr>
-      </thead>
-      <tbody>
-        {% for i in range(1,9) %}
-        <tr>
-          <td>Sem {{ i }}</td>
-          <td>
-            {{ (student|attr('sem' ~ i)) if (student|attr('sem' ~ i)) is not none else '-' }}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
 
     <div class="hr"></div>
 
@@ -109,19 +94,38 @@
     <h3>Skills</h3>
     <div class="toast ok"><b>Score:</b> {{ score }}</div>
 
+    <form method="post" class="form-inline" style="margin-bottom: 16px;">
+      <input type="hidden" name="form_type" value="skill_add">
+      <input type="hidden" name="tab" value="skills">
+      <div class="row" style="gap:12px; align-items:flex-end;">
+        <div class="field"><label>Skill</label><input name="skill_name" placeholder="e.g. Python"></div>
+        <div class="field"><label>Levels</label><input type="number" min="0" max="10" name="levels_completed" value="0"></div>
+        <div class="field" style="margin-top:22px;"><button class="btn btn-teal">Add Skill</button></div>
+      </div>
+    </form>
+
     <table class="table">
       <thead>
-        <tr><th>Skill</th><th>Levels Completed</th></tr>
+        <tr><th>Skill</th><th>Levels</th><th>Actions</th></tr>
       </thead>
       <tbody>
         {% for s in skills %}
         <tr>
-          <td>{{ s.skill_name }}</td>
-          <td>{{ s.levels_completed }}</td>
+          <form method="post">
+            <input type="hidden" name="tab" value="skills">
+            <input type="hidden" name="form_type" value="skill_edit">
+            <input type="hidden" name="id" value="{{ s.id }}">
+            <td><input name="skill_name" value="{{ s.skill_name }}"></td>
+            <td><input type="number" min="0" max="10" name="levels_completed" value="{{ s.levels_completed }}"></td>
+            <td style="display:flex; gap:8px;">
+              <button class="btn btn-teal">Save</button>
+              <button class="btn btn-danger" name="form_type" value="skill_delete">Delete</button>
+            </td>
+          </form>
         </tr>
         {% endfor %}
         {% if skills|length == 0 %}
-          <tr><td colspan="2">No skills added.</td></tr>
+          <tr><td colspan="3">No skills added.</td></tr>
         {% endif %}
       </tbody>
     </table>
@@ -195,49 +199,106 @@
     </form>
 
   <!-- ================= ACHIEVEMENTS ================= -->
-  {% else %}
-    <h3>Achievements & Certifications</h3>
+  {% elif tab == "achievements" %}
+    <h3>
+      Achievements
+      <a class="btn" style="float:right;" href="{{ url_for('staff_student_portal', sid=student.id) }}?tab=certifications">View Certifications</a>
+    </h3>
+
     <div class="toast ok"><b>Score:</b> {{ score }}</div>
 
-    <div class="grid">
-      <div class="card">
-        <h3>Achievements</h3>
-        <table class="table">
-          <thead><tr><th>Title</th><th>Level</th><th>Date</th></tr></thead>
-          <tbody>
-            {% for a in achievements %}
-            <tr>
-              <td>{{ a.title }}</td>
-              <td>{{ a.level or "-" }}</td>
-              <td>{{ a.date_str or "-" }}</td>
-            </tr>
-            {% endfor %}
-            {% if achievements|length == 0 %}
-              <tr><td colspan="3">No achievements.</td></tr>
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
+    <div class="card">
+      <h3>Achievements</h3>
 
-      <div class="card">
-        <h3>Certifications</h3>
-        <table class="table">
-          <thead><tr><th>Name</th><th>Provider</th><th>Date</th></tr></thead>
-          <tbody>
-            {% for c in certs %}
-            <tr>
-              <td>{{ c.name }}</td>
-              <td>{{ c.provider or "-" }}</td>
-              <td>{{ c.issue_date or "-" }}</td>
-            </tr>
-            {% endfor %}
-            {% if certs|length == 0 %}
-              <tr><td colspan="3">No certifications.</td></tr>
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
+      <form method="post" style="margin-bottom:16px;">
+        <input type="hidden" name="tab" value="achievements">
+        <input type="hidden" name="form_type" value="achievement_add">
+        <div class="row" style="gap:12px; align-items:flex-end;">
+          <div class="field"><label>Title</label><input name="title" placeholder="e.g. Paper Presentation"></div>
+          <div class="field"><label>Level</label><input name="level" placeholder="e.g. 1st, College"></div>
+          <div class="field"><label>Date</label><input type="date" name="date_str"></div>
+          <div class="field" style="margin-top:22px;"><button class="btn btn-teal">Add Achievement</button></div>
+        </div>
+      </form>
+
+      <table class="table">
+        <thead><tr><th>Title</th><th>Level</th><th>Date</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for a in achievements %}
+          <tr>
+            <form method="post">
+              <input type="hidden" name="tab" value="achievements">
+              <input type="hidden" name="form_type" value="achievement_edit">
+              <input type="hidden" name="id" value="{{ a.id }}">
+              <td><input name="title" value="{{ a.title }}"></td>
+              <td><input name="level" value="{{ a.level }}"></td>
+              <td><input type="date" name="date_str" value="{{ a.date_str }}"></td>
+              <td style="display:flex; gap:8px;">
+                <button class="btn btn-teal">Save</button>
+                <button class="btn btn-danger" name="form_type" value="achievement_delete">Delete</button>
+              </td>
+            </form>
+          </tr>
+          {% endfor %}
+          {% if achievements|length == 0 %}
+            <tr><td colspan="4">No achievements.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
     </div>
+
+  <!-- ================= CERTIFICATIONS ================= -->
+  {% elif tab == "certifications" %}
+    <h3>
+      Certifications
+      <a class="btn" style="float:right;" href="{{ url_for('staff_student_portal', sid=student.id) }}?tab=achievements">View Achievements</a>
+    </h3>
+
+    <div class="toast ok"><b>Score:</b> {{ score }}</div>
+
+    <div class="card">
+      <h3>Certifications</h3>
+
+      <form method="post" style="margin-bottom:16px;">
+        <input type="hidden" name="tab" value="certifications">
+        <input type="hidden" name="form_type" value="cert_add">
+        <div class="row" style="gap:12px; align-items:flex-end;">
+          <div class="field"><label>Name</label><input name="name" placeholder="e.g. AWS Cloud Practitioner"></div>
+          <div class="field"><label>Provider</label><input name="provider" placeholder="e.g. AWS"></div>
+          <div class="field"><label>Date</label><input type="date" name="issue_date"></div>
+          <div class="field" style="margin-top:22px;"><button class="btn btn-teal">Add Certification</button></div>
+        </div>
+      </form>
+
+      <table class="table">
+        <thead><tr><th>Name</th><th>Provider</th><th>Date</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for c in certs %}
+          <tr>
+            <form method="post">
+              <input type="hidden" name="tab" value="certifications">
+              <input type="hidden" name="form_type" value="cert_edit">
+              <input type="hidden" name="id" value="{{ c.id }}">
+              <td><input name="name" value="{{ c.name }}"></td>
+              <td><input name="provider" value="{{ c.provider }}"></td>
+              <td><input type="date" name="issue_date" value="{{ c.issue_date }}"></td>
+              <td style="display:flex; gap:8px;">
+                <button class="btn btn-teal">Save</button>
+                <button class="btn btn-danger" name="form_type" value="cert_delete">Delete</button>
+              </td>
+            </form>
+          </tr>
+          {% endfor %}
+          {% if certs|length == 0 %}
+            <tr><td colspan="4">No certifications.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+  {% else %}
+    <!-- fallback -->
+    <script>window.location.href = "/staff/student/{{ student.id }}?tab=achievements";</script>
   {% endif %}
 </div>
 

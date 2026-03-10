@@ -11,6 +11,7 @@
     <a class="btn" href="/student?tab=academics">Academics</a>
     <a class="btn" href="/student?tab=skills">Skills</a>
     <a class="btn" href="/student?tab=achievements">Achievements</a>
+    <a class="btn" href="/student?tab=certifications">Certifications</a>
   </div>
 
   <div class="hr"></div>
@@ -19,30 +20,26 @@
   {% if tab == "profile" %}
   <h3>Profile</h3>
 
-  <form method="post">
-    <input type="hidden" name="form_type" value="profile">
+  <div class="toast ok">
+    <b>Placement Score:</b> {{ score }}
+  </div>
 
-    <div class="row">
-      <div class="field"><label>Name</label><input name="name" value="{{ student.name }}" required></div>
-      <div class="field"><label>Contact Email</label><input name="contact_email" value="{{ student.contact_email }}" required></div>
-    </div>
+  <div class="row">
+    <div class="field"><label>Name</label><input value="{{ student.name }}" disabled></div>
+    <div class="field"><label>Contact Email</label><input value="{{ student.contact_email }}" disabled></div>
+  </div>
 
-    <div class="row">
-      <div class="field"><label>Phone</label><input name="phone" value="{{ student.phone }}" required></div>
-      <div class="field"><label>Parent Phone</label><input name="parent_phone" value="{{ student.parent_phone }}" required></div>
-    </div>
+  <div class="row">
+    <div class="field"><label>Phone</label><input value="{{ student.phone }}" disabled></div>
+    <div class="field"><label>Parent Phone</label><input value="{{ student.parent_phone }}" disabled></div>
+  </div>
 
-    <div class="row">
-      <div class="field"><label>Department</label><input name="department" value="{{ student.department }}" required></div>
-      <div class="field"><label>Mentor Name</label><input name="mentor_name" value="{{ student.mentor_name }}" required></div>
-    </div>
+  <div class="row">
+    <div class="field"><label>Department</label><input value="{{ student.department }}" disabled></div>
+    <div class="field"><label>Mentor Name</label><input value="{{ student.mentor_name }}" disabled></div>
+  </div>
 
-    <div class="field"><label>Address</label><input name="address" value="{{ student.address }}" required></div>
-
-    <button class="btn btn-teal" type="submit">Save Profile</button>
-    {% if message %}<div class="toast ok">{{ message }}</div>{% endif %}
-    {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
-  </form>
+  <div class="field"><label>Address</label><input value="{{ student.address }}" disabled></div>
 
   <!-- ================= ACADEMICS ================= -->
   {% elif tab == "academics" %}
@@ -53,35 +50,13 @@
     <b>Placement Score:</b> {{ score }}
   </div>
 
-  <form method="post">
-    <input type="hidden" name="form_type" value="academics">
-
-    <div class="row">
-      <div class="field"><label>Semester Start</label><input name="semester_start" value="{{ student.semester_start }}" required></div>
-      <div class="field"><label>Present Days</label><input type="number" min="0" name="present_days" value="{{ student.present_days }}" required></div>
-    </div>
-
-    <div class="row">
-      <div class="field"><label>Arrear Count</label><input type="number" min="0" name="arrear_count" value="{{ student.arrear_count }}" required></div>
-      <div class="field"><label>Attendance %</label><input value="{{ attendance_pct }}%" disabled></div>
-    </div>
-
-    <div class="hr"></div>
-
-    <div class="row">
-      {% for i in range(1,9) %}
-      <div class="field">
-        <label>Sem {{ i }} SGPA</label>
-        <input name="sem{{ i }}"
-          value="{{ (student|attr('sem' ~ i)) if (student|attr('sem' ~ i)) is not none else '' }}">
-      </div>
-      {% endfor %}
-    </div>
-
-    <button class="btn btn-teal" type="submit">Save Academics</button>
-    {% if message %}<div class="toast ok">{{ message }}</div>{% endif %}
-    {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
-  </form>
+  <div class="kpi">
+    <div class="k"><div class="t">Working Days</div><div class="v">{{ total_days }}</div></div>
+    <div class="k"><div class="t">Present</div><div class="v">{{ present }}</div></div>
+    <div class="k"><div class="t">Semester Start</div><div class="v">{{ student.semester_start }}</div></div>
+    <div class="k"><div class="t">Arrears</div><div class="v">{{ student.arrear_count }}</div></div>
+    <div class="k"><div class="t">Attendance</div><div class="v">{{ attendance_pct }}%</div></div>
+  </div>
 
   <div class="hr"></div>
 
@@ -116,112 +91,91 @@
 
   <div class="toast ok"><b>Placement Score:</b> {{ score }}</div>
 
-  <form method="post">
-    <input type="hidden" name="form_type" value="skill_add">
-
-    <div class="row">
-      <div class="field"><label>Skill Name</label><input name="skill_name" required></div>
-      <div class="field"><label>Levels Completed (0–10)</label><input type="number" min="0" max="10" name="levels_completed" value="0" required></div>
-    </div>
-
-    <button class="btn btn-teal" type="submit">Add Skill</button>
-  </form>
-
-  <div class="hr"></div>
-
   <table class="table">
-    <thead><tr><th>Skill</th><th>Levels</th><th>Action</th></tr></thead>
+    <thead><tr><th>Skill</th><th>Levels</th></tr></thead>
     <tbody>
       {% for s in skills %}
       <tr>
         <td>{{ s.skill_name }}</td>
         <td>{{ s.levels_completed }}</td>
-        <td>
-          <form method="post">
-            <input type="hidden" name="form_type" value="skill_delete">
-            <input type="hidden" name="id" value="{{ s.id }}">
-            <button class="btn btn-danger">Delete</button>
-          </form>
-        </td>
       </tr>
       {% endfor %}
       {% if skills|length == 0 %}
-        <tr><td colspan="3">No skills added.</td></tr>
+        <tr><td colspan="2">No skills added.</td></tr>
       {% endif %}
     </tbody>
   </table>
 
   <!-- ================= ACHIEVEMENTS ================= -->
-  {% else %}
-  <h3>Achievements & Certifications</h3>
+  {% elif tab == "achievements" %}
+  <h3>
+    Achievements
+    <a class="btn" style="float:right;" href="{{ url_for('student_portal') }}?tab=certifications">View Certifications</a>
+  </h3>
 
   <div class="toast ok"><b>Placement Score:</b> {{ score }}</div>
 
-  <div class="grid">
-    <div class="card">
-      <h3>Achievements</h3>
-      <form method="post">
-        <input type="hidden" name="form_type" value="ach_add">
-        <div class="field"><label>Title</label><input name="title" required></div>
-        <button class="btn btn-teal">Add</button>
-      </form>
-
-      <div class="hr"></div>
-
-      <table class="table">
-        <thead><tr><th>Title</th><th>Action</th></tr></thead>
-        <tbody>
-          {% for a in achievements %}
-          <tr>
-            <td>{{ a.title }}</td>
-            <td>
-              <form method="post">
-                <input type="hidden" name="form_type" value="ach_delete">
-                <input type="hidden" name="id" value="{{ a.id }}">
-                <button class="btn btn-danger">Delete</button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
-          {% if achievements|length == 0 %}
-            <tr><td colspan="2">No achievements.</td></tr>
-          {% endif %}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <h3>Certifications</h3>
-      <form method="post">
-        <input type="hidden" name="form_type" value="cert_add">
-        <div class="field"><label>Name</label><input name="name" required></div>
-        <button class="btn btn-teal">Add</button>
-      </form>
-
-      <div class="hr"></div>
-
-      <table class="table">
-        <thead><tr><th>Name</th><th>Action</th></tr></thead>
-        <tbody>
-          {% for c in certs %}
-          <tr>
-            <td>{{ c.name }}</td>
-            <td>
-              <form method="post">
-                <input type="hidden" name="form_type" value="cert_delete">
-                <input type="hidden" name="id" value="{{ c.id }}">
-                <button class="btn btn-danger">Delete</button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
-          {% if certs|length == 0 %}
-            <tr><td colspan="2">No certifications.</td></tr>
-          {% endif %}
-        </tbody>
-      </table>
-    </div>
+  <div class="card">
+    <table class="table">
+      <thead><tr><th>Title</th><th>Completed</th><th>Date</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for a in achievements %}
+        <tr>
+          <td>{{ a.title }}</td>
+          <td>{{ a.level or "-" }}</td>
+          <td>{{ a.date_str or "-" }}</td>
+          <td>
+            <form method="post">
+              <input type="hidden" name="form_type" value="ach_delete">
+              <input type="hidden" name="id" value="{{ a.id }}">
+              <button class="btn btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if achievements|length == 0 %}
+          <tr><td colspan="4">No achievements.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
   </div>
+
+  <!-- ================= CERTIFICATIONS ================= -->
+  {% elif tab == "certifications" %}
+  <h3>
+    Certifications
+    <a class="btn" style="float:right;" href="{{ url_for('student_portal') }}?tab=achievements">View Achievements</a>
+  </h3>
+
+  <div class="toast ok"><b>Placement Score:</b> {{ score }}</div>
+
+  <div class="card">
+    <table class="table">
+      <thead><tr><th>Name</th><th>Issued</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for c in certs %}
+        <tr>
+          <td>{{ c.name }}</td>
+          <td>{{ c.issue_date or "-" }}</td>
+          <td>
+            <form method="post">
+              <input type="hidden" name="form_type" value="cert_delete">
+              <input type="hidden" name="id" value="{{ c.id }}">
+              <button class="btn btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if certs|length == 0 %}
+          <tr><td colspan="3">No certifications.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+    <!-- Fallback: show achievements -->
+    <script>window.location.href = "/student?tab=achievements";</script>
   {% endif %}
 </div>
 

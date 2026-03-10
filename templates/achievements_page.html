@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card" style="max-width:800px; margin:auto;">
+  <h2>Achievements</h2>
+  <p class="sub">{{ student.roll }} • {{ student.name }}</p>
+
+  <div class="hr"></div>
+
+  <table class="table">
+    <thead><tr><th>Title</th><th>Date</th></tr></thead>
+    <tbody>
+      {% for a in achievements %}
+      <tr>
+        <td>{{ a.title }}</td>
+        <td>{{ a.date_str or "-" }}</td>
+      </tr>
+      {% endfor %}
+      {% if achievements|length == 0 %}
+      <tr><td colspan="2">No achievements yet.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <div style="margin-top:14px;">
+    <a class="btn" href="/student?tab=achievements">Back to Portal</a>
+    <a class="btn" href="/certifications">View Certifications</a>
+  </div>
+</div>
+
+{% endblock %}

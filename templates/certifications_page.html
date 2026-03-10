@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card" style="max-width:800px; margin:auto;">
+  <h2>Certifications</h2>
+  <p class="sub">{{ student.roll }} • {{ student.name }}</p>
+
+  <div class="hr"></div>
+
+  <table class="table">
+    <thead><tr><th>Name</th><th>Provider</th><th>Issued</th></tr></thead>
+    <tbody>
+      {% for c in certs %}
+      <tr>
+        <td>{{ c.name }}</td>
+        <td>{{ c.provider or "-" }}</td>
+        <td>{{ c.issue_date or "-" }}</td>
+      </tr>
+      {% endfor %}
+      {% if certs|length == 0 %}
+      <tr><td colspan="3">No certifications yet.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <div style="margin-top:14px;">
+    <a class="btn" href="/student?tab=certifications">Back to Portal</a>
+  </div>
+</div>
+
+{% endblock %}

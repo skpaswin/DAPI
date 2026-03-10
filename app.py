@@ -320,6 +320,18 @@ def register_student():
 
         sems = [safe_float(request.form.get(f"sem{i}")) for i in range(1,9)]
 
+        ach_titles = request.form.getlist("ach_title[]")
+        ach_levels = request.form.getlist("ach_level[]")
+        ach_dates = request.form.getlist("ach_dates[]")
+        ach_descs = request.form.getlist("ach_desc[]")
+
+        skill_names = request.form.getlist("skill_name[]")
+        skill_levels = request.form.getlist("skill_levels[]")
+
+        cert_names = request.form.getlist("cert_name[]")
+        cert_providers = request.form.getlist("cert_provider[]")
+        cert_issue_dates = request.form.getlist("cert_issue_date[]")
+
         try:
             conn = get_db()
             conn.execute(
@@ -340,6 +352,38 @@ def register_student():
                   (room_no if scholar_type=="Hosteller" else ""),
                   tenth, twelfth, semester_start, max(0,present_days), max(0,arrears),
                   *sems))
+            for idx, title in enumerate(ach_titles):
+                title = (title or "").strip()
+                if not title:
+                    continue
+                level = safe_int(ach_levels[idx] if idx < len(ach_levels) else None, 0)
+                date_str = (ach_dates[idx] if idx < len(ach_dates) else "") or ""
+                desc = (ach_descs[idx] if idx < len(ach_descs) else "") or ""
+                conn.execute(
+                    "INSERT INTO achievements(student_email, title, level, date_str, description) VALUES(?,?,?,?,?)",
+                    (login_email, title, str(level), date_str, desc)
+                )
+
+            for idx, name in enumerate(skill_names):
+                name = (name or "").strip()
+                if not name:
+                    continue
+                levels = safe_int(skill_levels[idx] if idx < len(skill_levels) else None, 0)
+                conn.execute(
+                    "INSERT INTO skills(student_email, skill_name, levels_completed) VALUES(?,?,?)",
+                    (login_email, name, levels)
+                )
+
+            for idx, name in enumerate(cert_names):
+                name = (name or "").strip()
+                if not name:
+                    continue
+                provider = (cert_providers[idx] if idx < len(cert_providers) else "") or ""
+                issue_date = (cert_issue_dates[idx] if idx < len(cert_issue_dates) else "") or ""
+                conn.execute(
+                    "INSERT INTO certifications(student_email, name, provider, issue_date) VALUES(?,?,?,?)",
+                    (login_email, name, provider, issue_date)
+                )
             conn.commit()
             refresh_score(conn, login_email)
             conn.close()
@@ -572,6 +616,20 @@ def student_portal():
     )
 
 
+@app.route("/achievements")
+def achievements_page():
+    if not require_role("student"):
+        return redirect("/")
+    return redirect("/student?tab=achievements")
+
+
+@app.route("/certifications")
+def certifications_page():
+    if not require_role("student"):
+        return redirect("/")
+    return redirect("/student?tab=certifications")
+
+
 # ---------------- STAFF ----------------
 @app.route("/staff", methods=["GET","POST"])
 def staff_dashboard():
@@ -608,7 +666,7 @@ def staff_student_portal(sid):
     if not require_role("staff"):
         return redirect("/")
 
-    tab = (request.args.get("tab") or "profile").strip()
+    tab = (request.form.get("tab") or request.args.get("tab") or "profile").strip()
 
     conn = get_db()
     student = conn.execute("SELECT * FROM students WHERE id=?", (sid,)).fetchone()
@@ -683,6 +741,19 @@ def staff_student_portal(sid):
                 refresh_score(conn, student["user_email"])
                 message = "Skill added ✅"
 
+        elif form_type == "skill_edit":
+            sid_skill = safe_int(request.form.get("id"), 0)
+            skill_name = request.form.get("skill_name","").strip()
+            levels = max(0, min(10, safe_int(request.form.get("levels_completed"), 0)))
+            if not skill_name:
+                error = "Skill name required"
+            else:
+                conn.execute("UPDATE skills SET skill_name=?, levels_completed=? WHERE id=? AND student_email=?",
+                             (skill_name, levels, sid_skill, student["user_email"]))
+                conn.commit()
+                refresh_score(conn, student["user_email"])
+                message = "Skill updated ✅"
+
         elif form_type == "skill_delete":
             sid_skill = safe_int(request.form.get("id"), 0)
             conn.execute("DELETE FROM skills WHERE id=? AND student_email=?",
@@ -690,6 +761,108 @@ def staff_student_portal(sid):
             conn.commit()
             refresh_score(conn, student["user_email"])
             message = "Skill deleted ✅"
+
+        elif form_type == "achievement_add":
+            title = request.form.get("title","").strip()
+            level = request.form.get("level","").strip()
+            date_str = request.form.get("date_str","").strip()
+            if not title:
+                error = "Achievement title required"
+            else:
+                if date_str:
+                    try:
+                        parse_ymd(date_str)
+                    except:
+                        error = "Achievement date must be YYYY-MM-DD"
+                if error is None:
+                    conn.execute(
+                        "INSERT INTO achievements (student_email, title, level, date_str) VALUES (?,?,?,?)",
+                        (student["user_email"], title, level, date_str or None)
+                    )
+                    conn.commit()
+                    refresh_score(conn, student["user_email"])
+                    message = "Achievement added ✅"
+
+        elif form_type == "achievement_edit":
+            aid = safe_int(request.form.get("id"), 0)
+            title = request.form.get("title","").strip()
+            level = request.form.get("level","").strip()
+            date_str = request.form.get("date_str","").strip()
+            if not title:
+                error = "Achievement title required"
+            else:
+                if date_str:
+                    try:
+                        parse_ymd(date_str)
+                    except:
+                        error = "Achievement date must be YYYY-MM-DD"
+                if error is None:
+                    conn.execute(
+                        "UPDATE achievements SET title=?, level=?, date_str=? WHERE id=? AND student_email=?",
+                        (title, level, date_str or None, aid, student["user_email"])
+                    )
+                    conn.commit()
+                    refresh_score(conn, student["user_email"])
+                    message = "Achievement updated ✅"
+
+        elif form_type == "achievement_delete":
+            aid = safe_int(request.form.get("id"), 0)
+            conn.execute("DELETE FROM achievements WHERE id=? AND student_email=?",
+                         (aid, student["user_email"]))
+            conn.commit()
+            refresh_score(conn, student["user_email"])
+            message = "Achievement deleted ✅"
+
+        elif form_type == "cert_add":
+            name = request.form.get("name","").strip()
+            provider = request.form.get("provider","").strip()
+            issue_date = request.form.get("issue_date","").strip()
+            if not name:
+                error = "Certification name required"
+            else:
+                if issue_date:
+                    try:
+                        parse_ymd(issue_date)
+                    except:
+                        error = "Certification date must be YYYY-MM-DD"
+                if error is None:
+                    conn.execute(
+                        "INSERT INTO certifications (student_email, name, provider, issue_date) VALUES (?,?,?,?)",
+                        (student["user_email"], name, provider, issue_date or None)
+                    )
+                    conn.commit()
+                    refresh_score(conn, student["user_email"])
+                    message = "Certification added ✅"
+
+        elif form_type == "cert_edit":
+            cid = safe_int(request.form.get("id"), 0)
+            name = request.form.get("name","").strip()
+            provider = request.form.get("provider","").strip()
+            issue_date = request.form.get("issue_date","").strip()
+            if not name:
+                error = "Certification name required"
+            else:
+                if issue_date:
+                    try:
+                        parse_ymd(issue_date)
+                    except:
+                        error = "Certification date must be YYYY-MM-DD"
+                if error is None:
+                    conn.execute(
+                        "UPDATE certifications SET name=?, provider=?, issue_date=? WHERE id=? AND student_email=?",
+                        (name, provider, issue_date or None, cid, student["user_email"])
+                    )
+                    conn.commit()
+                    refresh_score(conn, student["user_email"])
+                    message = "Certification updated ✅"
+
+        elif form_type == "cert_delete":
+            cid = safe_int(request.form.get("id"), 0)
+            conn.execute("DELETE FROM certifications WHERE id=? AND student_email=?",
+                         (cid, student["user_email"]))
+            conn.commit()
+            refresh_score(conn, student["user_email"])
+            message = "Certification deleted ✅"
 
     # reload
     student = conn.execute("SELECT * FROM students WHERE id=?", (sid,)).fetchone()
