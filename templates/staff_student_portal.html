@@ -48,12 +48,14 @@
 
       <div style="padding: 32px;">
         {% if tab == "profile" %}
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
             <div>
               <h3 style="margin: 0">Academic Profile Oversight</h3>
               <p class="sub" style="margin: 0">Modify the student's core attributes and academic markers.</p>
             </div>
           </div>
+
+          {% if message %}<div class="toast ok"><i data-lucide="check-circle" size="18"></i>{{ message }}</div>{% endif %}
+          {% if error %}<div class="toast error"><i data-lucide="alert-circle" size="18"></i>{{ error }}</div>{% endif %}
           
           <form method="post">
             <input type="hidden" name="form_type" value="edit">
@@ -67,6 +69,19 @@
                 <div class="field"><label>Student Phone</label><input name="phone" value="{{ student['phone'] }}" required></div>
                 <div class="field"><label>Parent Phone</label><input name="parent_phone" value="{{ student['parent_phone'] }}" required></div>
                 <div class="field"><label>Parent Occupation</label><input name="parent_occupation" value="{{ student['parent_occupation'] }}"></div>
+                
+                <div class="hr" style="margin: 16px 0;"></div>
+                <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 0.9rem;">Accommodation Status</h4>
+                <div class="field"><label>Scholar Type</label>
+                  <select name="scholar_type" onchange="this.value==='Hosteller' ? document.getElementById('hostel-fields-v2').style.display='grid' : document.getElementById('hostel-fields-v2').style.display='none'" style="border-color: var(--accent);">
+                    <option value="Day Scholar" {% if student['scholar_type']=='Day Scholar' %}selected{% endif %}>Day Scholar</option>
+                    <option value="Hosteller" {% if student['scholar_type']=='Hosteller' %}selected{% endif %}>Hosteller</option>
+                  </select>
+                </div>
+                <div id="hostel-fields-v2" class="row" {% if student["scholar_type"] != "Hosteller" %}style="display: none;"{% endif %}>
+                  <div class="field"><label>Warden Name</label><input name="warden_name" value="{{ student['warden_name'] }}" placeholder="Warden Name"></div>
+                  <div class="field"><label>Room No</label><input name="room_no" value="{{ student['room_no'] }}" placeholder="Room No"></div>
+                </div>
               </div>
 
               <!-- Personal Metrics Column 2 -->
@@ -129,19 +144,7 @@
                   <div class="field"><label>Present Days</label><input name="present_days" type="number" value="{{ student['present_days'] }}"></div>
                   <div class="field"><label>Arrear Count</label><input name="arrear_count" type="number" value="{{ student['arrear_count'] }}"></div>
                 </div>
-                <div class="row">
-                  <div class="field"><label>Scholar Type</label>
-                    <select name="scholar_type" onchange="this.value==='Hosteller' ? document.getElementById('hostel-fields').style.display='grid' : document.getElementById('hostel-fields').style.display='none'">
-                      <option value="Day Scholar" {% if student['scholar_type']=='Day Scholar' %}selected{% endif %}>Day Scholar</option>
-                      <option value="Hosteller" {% if student['scholar_type']=='Hosteller' %}selected{% endif %}>Hosteller</option>
-                    </select>
-                  </div>
-                  <div class="field"><label>DOB (Institutional)</label><input name="dob" type="date" value="{{ student['dob'] }}"></div>
-                </div>
-                <div id="hostel-fields" class="row" {% if student["scholar_type"] != "Hosteller" %}style="display: none;"{% endif %}>
-                  <div class="field"><label>Warden Name</label><input name="warden_name" value="{{ student['warden_name'] }}"></div>
-                  <div class="field"><label>Room No</label><input name="room_no" value="{{ student['room_no'] }}"></div>
-                </div>
+                <div class="field"><label>DOB (Institutional)</label><input name="dob" type="date" value="{{ student['dob'] }}"></div>
               </div>
             </div>
 
@@ -309,13 +312,11 @@
           </div>
         {% endif %}
 
-        {% if message %}<div class="toast ok"><i data-lucide="check-circle" size="18"></i>{{ message }}</div>{% endif %}
-        {% if error %}<div class="toast error"><i data-lucide="alert-circle" size="18"></i>{{ error }}</div>{% endif %}
       </div>
     </div>
 
     <!-- Stats Sidebar -->
-    <aside class="fade-in" style="display: flex; flex-direction: column; gap: 24px;">
+    <aside class="fade-in" style="display: flex; flex-direction: column; gap: 24px; position: sticky; top: 100px; height: fit-content; min-width: 350px; border-left: 1px solid var(--border); padding-left: 16px;">
       <div class="card" style="margin-bottom: 24px;">
         <h3 style="font-size: 1.1rem; margin-bottom: 20px; color: var(--muted); text-transform: uppercase;">Engagement Stats</h3>
         <div style="display: flex; flex-direction: column; gap: 20px;">
