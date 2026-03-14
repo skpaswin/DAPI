@@ -870,6 +870,8 @@ def staff_student_portal(sid):
             m_marks = safe_float(request.form.get("maths_marks"), 0.0)
             cs_marks = safe_float(request.form.get("cs_marks"), 0.0)
             b_marks = safe_float(request.form.get("biology_marks"), 0.0)
+            hsc_cutoff = safe_float(request.form.get("hsc_cutoff"), 0.0)
+            school_name = request.form.get("school_name", "").strip()
 
             department = request.form.get("department", student["department"]).strip().upper()
             mentor_name = request.form.get("mentor_name", student["mentor_name"]).strip()
