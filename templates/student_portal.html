@@ -5,7 +5,7 @@
   <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; gap: 20px; flex-wrap: wrap;">
     <div>
       <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 4px;">Welcome back, {{ student['name'] }}</h1>
-      <p class="sub" style="margin-bottom: 0;">{{ student['student_id'] }} | {{ student['department'] }}</p>
+      <p class="sub" style="margin-bottom: 0;">{{ student['student_id'] }} | {{ student['roll'] }} | {{ student['register_no'] }} | {{ student['department'] }}</p>
     </div>
     <div style="display: flex; gap: 12px;">
       <div class="badge" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px; background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.2); color: var(--primary);">
@@ -202,6 +202,12 @@
                   <td style="text-align: center;">-</td>
                   <td style="text-align: center;">100</td>
                   <td style="text-align: center;">{{ student['cs_marks'] or '0.00' }}</td>
+                </tr>
+                <tr>
+                  <td>Biology</td>
+                  <td style="text-align: center;">-</td>
+                  <td style="text-align: center;">100</td>
+                  <td style="text-align: center;">{{ student['biology_marks'] or '0.00' }}</td>
                 </tr>
               </tbody>
             </table>
