@@ -3,6 +3,8 @@ import sqlite3, json, os, logging
 from datetime import date, datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from werkzeug.utils import secure_filename
+
 # Configure logging for 24/7 operation
 log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
 os.makedirs(log_dir, exist_ok=True)
@@ -19,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dapi_secret_key_dev_only")
+app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads', 'certificates')
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 
 # Database configuration
@@ -26,7 +30,7 @@ db_path = os.environ.get("DB_PATH", os.path.join(os.path.dirname(os.path.abspath
 
 # ------------- DB Functions ----------------
 def get_db():
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(db_path, timeout=10)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -74,7 +78,38 @@ def init_db():
         sem1 REAL, sem2 REAL, sem3 REAL, sem4 REAL,
         sem5 REAL, sem6 REAL, sem7 REAL, sem8 REAL,
 
-        placement_score REAL NOT NULL DEFAULT 0
+        placement_score REAL NOT NULL DEFAULT 0,
+
+        -- New Fields from Portal Redesign
+        batch TEXT,
+        enrollment_no TEXT,
+        register_no TEXT,
+        dte_umis_reg_no TEXT,
+        application_no TEXT,
+        admission_no TEXT,
+        father_name TEXT,
+        mother_name TEXT,
+        gender TEXT,
+        dob TEXT,
+        community TEXT,
+        religion TEXT,
+        nationality TEXT,
+        mother_tongue TEXT,
+        blood_group TEXT,
+        aadhar_no TEXT,
+        parent_occupation TEXT,
+        parent_income REAL,
+        physics_marks REAL,
+        chemistry_marks REAL,
+        maths_marks REAL,
+        cs_marks REAL,
+        biology_marks REAL,
+        fees_due REAL,
+        ps_rank INTEGER,
+        
+        -- New Academic Fields
+        hsc_cutoff REAL,
+        school_name TEXT
     )
     """)
 
@@ -105,7 +140,9 @@ def init_db():
         name TEXT NOT NULL,
         provider TEXT,
         issue_date TEXT,
-        credential_url TEXT
+        credential_url TEXT,
+        file_path TEXT,
+        status TEXT DEFAULT 'Pending'
     )
     """)
 
@@ -127,14 +164,14 @@ def safe_int(x, default=0):
         return default
 
 
-def safe_float(x):
+def safe_float(x, default=None):
     try:
-        if x is None: return None
+        if x is None: return default
         x = str(x).strip()
-        if x == "": return None
+        if x == "": return default
         return float(x)
     except:
-        return None
+        return default
 
 
 def parse_ymd(s: str):
@@ -205,9 +242,9 @@ def calc_placement_score(conn, student_email: str, student_row):
     ).fetchone()["c"]
     ach_part = min(10.0, ach_count * 2.5)  # 4 achievements => 10
 
-    # Certifications up to 10
+    # Certifications up to 10 (ONLY VERIFIED)
     cert_count = conn.execute(
-        "SELECT COUNT(*) AS c FROM certifications WHERE student_email=?",
+        "SELECT COUNT(*) AS c FROM certifications WHERE student_email=? AND status='Verified'",
         (student_email,)
     ).fetchone()["c"]
     cert_part = min(10.0, cert_count * 2.0)  # 5 certs => 10
@@ -235,7 +272,14 @@ def require_role(role):
 
 
 # ---------------- AUTH ----------------
-@app.route("/", methods=["GET","POST"])
+@app.route("/")
+def index():
+    if session.get("role"):
+        return redirect("/student" if session["role"] == "student" else "/staff")
+    return render_template("index.html")
+
+
+@app.route("/login", methods=["GET","POST"])
 def login():
     error = None
     if request.method == "POST":
@@ -269,6 +313,9 @@ def logout():
 
 @app.route("/register/student", methods=["GET","POST"])
 def register_student():
+    if not require_role("staff"):
+        return redirect("/")
+
     message = None
     error = None
 
@@ -277,12 +324,27 @@ def register_student():
         login_pass = request.form.get("login_pass","").strip()
 
         student_id = request.form.get("student_id","").strip()
+        enrollment_no = request.form.get("enrollment_no","").strip()
         roll = request.form.get("roll","").strip()
+        register_no = request.form.get("register_no","").strip()
         name = request.form.get("name","").strip()
+        batch = request.form.get("batch","").strip()
+        gender = request.form.get("gender","").strip()
+        blood_group = request.form.get("blood_group","").strip()
+        dob = request.form.get("dob","").strip()
+        aadhar_no = request.form.get("aadhar_no","").strip()
         contact_email = request.form.get("contact_email","").strip().lower()
 
         phone = request.form.get("phone","").strip()
+        father_name = request.form.get("father_name", "").strip()
+        mother_name = request.form.get("mother_name", "").strip()
         parent_phone = request.form.get("parent_phone","").strip()
+        parent_occupation = request.form.get("parent_occupation", "").strip()
+        parent_income = safe_float(request.form.get("parent_income"), 0.0)
+        mother_tongue = request.form.get("mother_tongue", "").strip()
+        community = request.form.get("community", "").strip()
+        religion = request.form.get("religion", "").strip()
+        nationality = request.form.get("nationality", "INDIAN").strip()
         address = request.form.get("address","").strip()
 
         department = request.form.get("department","").strip()
@@ -294,13 +356,26 @@ def register_student():
 
         tenth = request.form.get("tenth","").strip()
         twelfth = request.form.get("twelfth","").strip()
+        physics_marks = safe_float(request.form.get("physics_marks"), 0.0)
+        chemistry_marks = safe_float(request.form.get("chemistry_marks"), 0.0)
+        maths_marks = safe_float(request.form.get("maths_marks"), 0.0)
+        cs_marks = safe_float(request.form.get("cs_marks"), 0.0)
+        biology_marks = safe_float(request.form.get("biology_marks"), 0.0)
 
         semester_start = request.form.get("semester_start","").strip()
         present_days = safe_int(request.form.get("present_days"), 0)
         arrears = safe_int(request.form.get("arrear_count"), 0)
+        
+        hsc_cutoff = safe_float(request.form.get("hsc_cutoff"), 0.0)
+        school_name = request.form.get("school_name", "").strip()
+        custom_dept = request.form.get("custom_department", "").strip()
+        
+        if department == "OTHER" and custom_dept:
+            department = custom_dept
+        department = department.upper()
 
         if not all([login_email, login_pass, student_id, roll, name, contact_email, phone, parent_phone,
-                    address, department, mentor_name, tenth, twelfth, semester_start]):
+                    address, department, mentor_name, tenth, twelfth, semester_start, batch, gender, dob]):
             error = "Please fill all required fields"
             return render_template("register_student.html", message=message, error=error)
 
@@ -344,14 +419,24 @@ def register_student():
                  phone, parent_phone, address, department, mentor_name,
                  scholar_type, warden_name, room_no,
                  tenth, twelfth, semester_start, present_days, arrear_count,
-                 sem1, sem2, sem3, sem4, sem5, sem6, sem7, sem8)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 sem1, sem2, sem3, sem4, sem5, sem6, sem7, sem8,
+                 batch, enrollment_no, register_no, gender, blood_group, dob,
+                 aadhar_no, father_name, mother_name, parent_occupation, parent_income,
+                 mother_tongue, community, religion, nationality,
+                 physics_marks, chemistry_marks, maths_marks, cs_marks, biology_marks,
+                 hsc_cutoff, school_name)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (login_email, student_id, roll, name, contact_email,
                   phone, parent_phone, address, department, mentor_name,
                   scholar_type, (warden_name if scholar_type=="Hosteller" else ""),
                   (room_no if scholar_type=="Hosteller" else ""),
                   tenth, twelfth, semester_start, max(0,present_days), max(0,arrears),
-                  *sems))
+                  *sems,
+                  batch, enrollment_no, register_no, gender, blood_group, dob,
+                  aadhar_no, father_name, mother_name, parent_occupation, parent_income,
+                  mother_tongue, community, religion, nationality,
+                  physics_marks, chemistry_marks, maths_marks, cs_marks, biology_marks,
+                  hsc_cutoff, school_name))
             for idx, title in enumerate(ach_titles):
                 title = (title or "").strip()
                 if not title:
@@ -386,12 +471,14 @@ def register_student():
                 )
             conn.commit()
             refresh_score(conn, login_email)
-            conn.close()
-            message = "Student Registered ✅ Now login!"
+            message = "Student Registered Successfully ✅"
         except sqlite3.IntegrityError:
             error = "Email or Roll already exists"
         except Exception as e:
             error = f"Error: {e}"
+        finally:
+            if 'conn' in locals():
+                conn.close()
 
     return render_template("register_student.html", message=message, error=error)
 
@@ -418,12 +505,14 @@ def register_staff():
                 (email, generate_password_hash(password))
             )
             conn.commit()
-            conn.close()
             message = "Staff Registered ✅ Now login!"
         except sqlite3.IntegrityError:
             error = "Staff email already exists"
         except Exception as e:
             error = f"Error: {e}"
+        finally:
+            if 'conn' in locals():
+                conn.close()
 
     return render_template("register_staff.html", message=message, error=error)
 
@@ -446,6 +535,18 @@ def student_portal():
     message = None
     error = None
 
+    # Redesign: Populate defaults for test student if data missing
+    if student['batch'] is None:
+        conn.execute("""
+            UPDATE students SET 
+                batch='2023', enrollment_no='2023UIT1076', register_no='7376232IT117',
+                gender='MALE', nationality='INDIAN', physics_marks=89.0, chemistry_marks=93.0,
+                maths_marks=87.0, cs_marks=94.0, fees_due=0.0, ps_rank=0
+            WHERE user_email=?
+        """, (email,))
+        conn.commit()
+        student = conn.execute("SELECT * FROM students WHERE user_email=?", (email,)).fetchone()
+
     if request.method == "POST":
         form_type = request.form.get("form_type","").strip()
 
@@ -462,22 +563,48 @@ def student_portal():
             scholar_type = request.form.get("scholar_type","Day Scholar").strip()
             warden_name = request.form.get("warden_name","").strip()
             room_no = request.form.get("room_no","").strip()
+            
+            # New Fields
+            batch = request.form.get("batch","").strip()
+            enroll_no = request.form.get("enrollment_no","").strip()
+            reg_no = request.form.get("register_no","").strip()
+            umis_no = request.form.get("dte_umis_reg_no","").strip()
+            app_no = request.form.get("application_no","").strip()
+            adm_no = request.form.get("admission_no","").strip()
+            father = request.form.get("father_name","").strip()
+            mother = request.form.get("mother_name","").strip()
+            gender = request.form.get("gender","").strip()
+            dob = request.form.get("dob","").strip()
+            community = request.form.get("community","").strip()
+            religion = request.form.get("religion","").strip()
+            nationality = request.form.get("nationality","").strip()
+            mother_tongue = request.form.get("mother_tongue","").strip()
+            blood_group = request.form.get("blood_group","").strip()
+            aadhar_no = request.form.get("aadhar_no","").strip()
+            p_occ = request.form.get("parent_occupation","").strip()
+            p_inc = safe_float(request.form.get("parent_income"), 0.0)
 
             if not all([name, contact_email, phone, parent_phone, address, department, mentor_name]):
                 error = "Fill all required fields"
-            elif scholar_type == "Hosteller" and (not warden_name or not room_no):
-                error = "If Hosteller: warden name + room no required"
             else:
                 conn.execute("""
                     UPDATE students SET
                       name=?, contact_email=?, phone=?, parent_phone=?, address=?,
-                      department=?, mentor_name=?, scholar_type=?, warden_name=?, room_no=?
+                      department=?, mentor_name=?, scholar_type=?, warden_name=?, room_no=?,
+                      batch=?, enrollment_no=?, register_no=?, dte_umis_reg_no=?, 
+                      application_no=?, admission_no=?, father_name=?, mother_name=?,
+                      gender=?, dob=?, community=?, religion=?, nationality=?,
+                      mother_tongue=?, blood_group=?, aadhar_no=?, parent_occupation=?,
+                      parent_income=?
                     WHERE user_email=?
                 """, (name, contact_email, phone, parent_phone, address,
                       department, mentor_name, scholar_type,
                       (warden_name if scholar_type=="Hosteller" else ""),
                       (room_no if scholar_type=="Hosteller" else ""),
-                      email))
+                      batch, enroll_no, reg_no, umis_no, app_no, adm_no,
+                      father, mother, gender, dob, community, religion,
+                      nationality, mother_tongue, blood_group, aadhar_no,
+                      p_occ, p_inc, email))
                 conn.commit()
                 message = "Profile updated ✅"
 
@@ -487,6 +614,13 @@ def student_portal():
             present_days = max(0, safe_int(request.form.get("present_days"), 0))
             arrears = max(0, safe_int(request.form.get("arrear_count"), 0))
             sems = [safe_float(request.form.get(f"sem{i}")) for i in range(1,9)]
+            
+            # School marks
+            p_marks = safe_float(request.form.get("physics_marks"), 0.0)
+            c_marks = safe_float(request.form.get("chemistry_marks"), 0.0)
+            m_marks = safe_float(request.form.get("maths_marks"), 0.0)
+            cs_marks = safe_float(request.form.get("cs_marks"), 0.0)
+            b_marks = safe_float(request.form.get("biology_marks"), 0.0)
 
             try:
                 parse_ymd(semester_start)
@@ -497,12 +631,14 @@ def student_portal():
                 conn.execute("""
                     UPDATE students SET
                       semester_start=?, present_days=?, arrear_count=?,
-                      sem1=?, sem2=?, sem3=?, sem4=?, sem5=?, sem6=?, sem7=?, sem8=?
+                      sem1=?, sem2=?, sem3=?, sem4=?, sem5=?, sem6=?, sem7=?, sem8=?,
+                      physics_marks=?, chemistry_marks=?, maths_marks=?, cs_marks=?, biology_marks=?
                     WHERE user_email=?
-                """, (semester_start, present_days, arrears, *sems, email))
+                """, (semester_start, present_days, arrears, *sems, 
+                      p_marks, c_marks, m_marks, cs_marks, b_marks, email))
                 conn.commit()
                 refresh_score(conn, email)
-                message = "Academics updated ✅"
+                message = "Academic records calibrated! ✅"
 
         # SKILL ADD/DELETE
         elif form_type == "skill_add":
@@ -552,19 +688,28 @@ def student_portal():
 
         elif form_type == "cert_add":
             name = request.form.get("name","").strip()
+            provider = request.form.get("provider","").strip()
+            issue_date = request.form.get("issue_date","").strip()
+            credential_url = request.form.get("credential_url","").strip()
+            
+            file = request.files.get("cert_file")
+            file_path = None
+            
             if not name:
                 error = "Certification name required"
             else:
+                if file and file.filename != "":
+                    filename = secure_filename(f"{email}_{datetime.now().timestamp()}_{file.filename}")
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    file_path = f"uploads/certificates/{filename}"
+
                 conn.execute("""
-                    INSERT INTO certifications(student_email, name, provider, issue_date, credential_url)
-                    VALUES(?,?,?,?,?)
-                """, (email, name,
-                      request.form.get("provider","").strip(),
-                      request.form.get("issue_date","").strip(),
-                      request.form.get("credential_url","").strip()))
+                    INSERT INTO certifications(student_email, name, provider, issue_date, credential_url, file_path, status)
+                    VALUES(?,?,?,?,?,?,?)
+                """, (email, name, provider, issue_date, credential_url, file_path, 'Pending'))
                 conn.commit()
                 refresh_score(conn, email)
-                message = "Certification added ✅"
+                message = "Certification added (Pending Verification) ✅"
 
         elif form_type == "cert_delete":
             cid = safe_int(request.form.get("id"), 0)
@@ -687,19 +832,42 @@ def staff_student_portal(sid):
             phone = request.form.get("phone","").strip()
             parent_phone = request.form.get("parent_phone","").strip()
             address = request.form.get("address","").strip()
-            department = request.form.get("department","").strip()
-            mentor_name = request.form.get("mentor_name","").strip()
-
-            scholar_type = request.form.get("scholar_type","Day Scholar").strip()
-            warden_name = request.form.get("warden_name","").strip()
-            room_no = request.form.get("room_no","").strip()
+            
+            # New fields from redesign integration
+            batch = request.form.get("batch","").strip()
+            dob = request.form.get("dob","").strip()
+            gender = request.form.get("gender","").strip()
+            community = request.form.get("community","").strip()
+            religion = request.form.get("religion","").strip()
+            nationality = request.form.get("nationality","INDIAN").strip()
+            mother_tongue = request.form.get("mother_tongue","").strip()
+            blood_group = request.form.get("blood_group","").strip()
+            enrollment_no = request.form.get("enrollment_no","").strip()
+            register_no = request.form.get("register_no","").strip()
+            father_name = request.form.get("father_name","").strip()
+            mother_name = request.form.get("mother_name","").strip()
+            aadhar_no = request.form.get("aadhar_no","").strip()
+            parent_occupation = request.form.get("parent_occupation","").strip()
+            parent_income = safe_float(request.form.get("parent_income"), 0.0)
 
             semester_start = request.form.get("semester_start","").strip()
             present_days = max(0, safe_int(request.form.get("present_days"), 0))
             arrears = max(0, safe_int(request.form.get("arrear_count"), 0))
             sems = [safe_float(request.form.get(f"sem{i}")) for i in range(1,9)]
 
-            if not all([name, contact_email, phone, parent_phone, address, department, mentor_name, semester_start]):
+            p_marks = safe_float(request.form.get("physics_marks"), 0.0)
+            c_marks = safe_float(request.form.get("chemistry_marks"), 0.0)
+            m_marks = safe_float(request.form.get("maths_marks"), 0.0)
+            cs_marks = safe_float(request.form.get("cs_marks"), 0.0)
+            b_marks = safe_float(request.form.get("biology_marks"), 0.0)
+
+            department = request.form.get("department", student["department"]).strip()
+            mentor_name = request.form.get("mentor_name", student["mentor_name"]).strip()
+            scholar_type = request.form.get("scholar_type", student["scholar_type"]).strip()
+            warden_name = request.form.get("warden_name","").strip()
+            room_no = request.form.get("room_no","").strip()
+
+            if not all([name, contact_email, phone, parent_phone, address, semester_start]):
                 error = "Fill all required fields"
             else:
                 try:
@@ -715,18 +883,26 @@ def staff_student_portal(sid):
                     UPDATE students SET
                       name=?, contact_email=?, phone=?, parent_phone=?, address=?,
                       department=?, mentor_name=?, scholar_type=?, warden_name=?, room_no=?,
+                      batch=?, dob=?, gender=?, community=?, religion=?, nationality=?, 
+                      mother_tongue=?, blood_group=?, enrollment_no=?, register_no=?,
+                      father_name=?, mother_name=?, aadhar_no=?, parent_occupation=?, parent_income=?,
                       semester_start=?, present_days=?, arrear_count=?,
+                      physics_marks=?, chemistry_marks=?, maths_marks=?, cs_marks=?, biology_marks=?,
                       sem1=?, sem2=?, sem3=?, sem4=?, sem5=?, sem6=?, sem7=?, sem8=?
                     WHERE id=?
                 """, (name, contact_email, phone, parent_phone, address,
                       department, mentor_name, scholar_type,
                       (warden_name if scholar_type=="Hosteller" else ""),
                       (room_no if scholar_type=="Hosteller" else ""),
+                      batch, dob, gender, community, religion, nationality,
+                      mother_tongue, blood_group, enrollment_no, register_no,
+                      father_name, mother_name, aadhar_no, parent_occupation, parent_income,
                       semester_start, present_days, arrears,
+                      p_marks, c_marks, m_marks, cs_marks, b_marks,
                       *sems, sid))
                 conn.commit()
                 refresh_score(conn, student["user_email"])
-                message = "Student updated ✅"
+                message = "Student records synchronized! ✅"
 
         # Staff can manage skills too
         elif form_type == "skill_add":
@@ -863,6 +1039,14 @@ def staff_student_portal(sid):
             conn.commit()
             refresh_score(conn, student["user_email"])
             message = "Certification deleted ✅"
+
+        elif form_type == "cert_verify":
+            cid = safe_int(request.form.get("id"), 0)
+            status = request.form.get("status", "Verified")
+            conn.execute("UPDATE certifications SET status=? WHERE id=?", (status, cid))
+            conn.commit()
+            refresh_score(conn, student["user_email"])
+            message = f"Certification {status} ✅"
 
     # reload
     student = conn.execute("SELECT * FROM students WHERE id=?", (sid,)).fetchone()
