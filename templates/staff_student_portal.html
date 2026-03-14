@@ -138,8 +138,7 @@
                   </div>
                   <div class="field"><label>DOB (Institutional)</label><input name="dob" type="date" value="{{ student['dob'] }}"></div>
                 </div>
-                {% set hostel_display = "grid" if student["scholar_type"] == "Hosteller" else "none" %}
-                <div id="hostel-fields" class="row" style="display: {{ hostel_display }};">
+                <div id="hostel-fields" class="row" {% if student["scholar_type"] != "Hosteller" %}style="display: none;"{% endif %}>
                   <div class="field"><label>Warden Name</label><input name="warden_name" value="{{ student['warden_name'] }}"></div>
                   <div class="field"><label>Room No</label><input name="room_no" value="{{ student['room_no'] }}"></div>
                 </div>
