@@ -197,6 +197,35 @@
               <h3 style="margin: 0">Credential Verification</h3>
               <p class="sub" style="margin: 0">Audit student-uploaded certificates and award placement points.</p>
             </div>
+            <button class="btn btn-primary" onclick="document.getElementById('admin-cert-form').style.display='block'; this.style.display='none'">
+              <i data-lucide="plus" size="18"></i>
+              <span>Add Admin Certificate</span>
+            </button>
+          </div>
+
+          <!-- Administrative Certificate Upload -->
+          <div id="admin-cert-form" style="display: none; margin-bottom: 32px;" class="fade-in">
+            <div class="card" style="border-color: var(--primary); background: rgba(99, 102, 241, 0.02);">
+              <form method="post" enctype="multipart/form-data">
+                <input type="hidden" name="form_type" value="cert_add">
+                <div class="row">
+                  <div class="field"><label>Certification Name</label><input name="name" required></div>
+                  <div class="field"><label>Provider</label><input name="provider"></div>
+                </div>
+                <div class="row">
+                  <div class="field"><label>Issue Date</label><input type="date" name="issue_date"></div>
+                  <div class="field"><label>Credential URL (Optional)</label><input name="credential_url"></div>
+                </div>
+                <div class="field">
+                  <label>Proof Document (PDF/Image)</label>
+                  <input type="file" name="cert_file">
+                </div>
+                <div style="display: flex; gap: 12px; margin-top: 16px;">
+                  <button type="submit" class="btn btn-primary">Save & Verify</button>
+                  <button type="button" class="btn" onclick="location.reload()">Cancel</button>
+                </div>
+              </form>
+            </div>
           </div>
 
           <div class="table-container">
@@ -229,7 +258,10 @@
                   <td style="text-align: right;">
                     <div style="display: flex; gap: 8px; justify-content: flex-end;">
                       {% if c['file_path'] %}
-                        <a href="{{ url_for('static', filename=c['file_path'].replace('uploads/certificates/', 'uploads/certificates/')) }}" target="_blank" class="btn" title="View Document" style="padding: 6px 10px; background: rgba(99, 102, 241, 0.1); color: var(--primary);">
+                        <button type="button" onclick="openPreview('/static/{{ c['file_path'] }}', '{{ c['name'] }}')" class="btn" title="View Document" style="padding: 6px 10px; background: rgba(99, 102, 241, 0.1); color: var(--primary);">
+                          <i data-lucide="eye" size="14"></i>
+                        </button>
+                        <a href="{{ url_for('static', filename=c['file_path']) }}" target="_blank" class="btn" title="Open Full Screen" style="padding: 6px 10px; background: rgba(255,255,255,0.05); color: var(--muted);">
                           <i data-lucide="external-link" size="14"></i>
                         </a>
                       {% endif %}
@@ -281,7 +313,82 @@
           </div>
         </div>
       </div>
+
+      <!-- DAPI Score Breakdown -->
+      <div class="card" style="margin-bottom: 24px;">
+        <h3 style="font-size: 1.1rem; margin-bottom: 20px; color: var(--muted); text-transform: uppercase;">Score Breakdown</h3>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.01); border-radius: 8px;">
+            <span style="font-size: 0.85rem; color: var(--muted);">CGPA (50m)</span>
+            <span style="font-weight: 700; color: var(--primary);">+{{ breakdown['cgpa_points'] }}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.01); border-radius: 8px;">
+            <span style="font-size: 0.85rem; color: var(--muted);">Skills (30m)</span>
+            <span style="font-weight: 700; color: var(--accent);">+{{ breakdown['skill_points'] }}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.01); border-radius: 8px;">
+            <span style="font-size: 0.85rem; color: var(--muted);">Achievements (10m)</span>
+            <span style="font-weight: 700; color: #f59e0b;">+{{ breakdown['ach_points'] }}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.01); border-radius: 8px;">
+            <span style="font-size: 0.85rem; color: var(--muted);">Certifications (10m)</span>
+            <span style="font-weight: 700; color: #10b981;">+{{ breakdown['cert_points'] }}</span>
+          </div>
+          {% if breakdown['penalty'] > 0 %}
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(239, 68, 68, 0.05); border-radius: 8px;">
+            <span style="font-size: 0.85rem; color: var(--danger);">Arrear Penalty</span>
+            <span style="font-weight: 700; color: var(--danger);">-{{ breakdown['penalty'] }}</span>
+          </div>
+          {% endif %}
+          <div class="hr" style="margin: 8px 0;"></div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(20, 184, 166, 0.1); border-radius: 8px; border: 1px solid rgba(20, 184, 166, 0.2);">
+            <span style="font-weight: 800; text-transform: uppercase; font-size: 0.9rem;">Final DAPI Index</span>
+            <span style="font-size: 1.25rem; font-weight: 800; color: var(--accent);">{{ breakdown['total'] }}</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+
+<!-- Preview Modal -->
+<div id="preview-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; padding: 40px; justify-content: center; align-items: center; backdrop-filter: blur(8px);">
+  <div class="card" style="max-width: 90%; max-height: 90%; overflow: hidden; display: flex; flex-direction: column; background: var(--bg);">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--border);">
+      <h3 style="margin:0" id="modal-title">Credential Proof</h3>
+      <button class="btn" onclick="closeModal()" style="padding: 8px;"><i data-lucide="x"></i></button>
+    </div>
+    <div style="flex: 1; overflow: auto; padding: 20px; text-align: center;" id="modal-body">
+      <!-- Content injected by JS -->
+    </div>
+  </div>
+</div>
+
+<script>
+  function openPreview(url, name) {
+    const modal = document.getElementById('preview-modal');
+    const title = document.getElementById('modal-title');
+    const body = document.getElementById('modal-body');
+    
+    title.innerText = name;
+    
+    if (url.toLowerCase().endsWith('.pdf')) {
+      body.innerHTML = `<iframe src="${url}" style="width: 100%; height: 70vh; border: none;"></iframe>`;
+    } else {
+      body.innerHTML = `<img src="${url}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">`;
+    }
+    
+    modal.style.display = 'flex';
+    lucide.createIcons();
+  }
+
+  function closeModal() {
+    document.getElementById('preview-modal').style.display = 'none';
+  }
+
+  // Close on ESC
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+  });
+</script>
 {% endblock %}
