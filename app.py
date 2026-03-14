@@ -767,6 +767,7 @@ def student_portal():
         (email,)
     ).fetchall()
 
+    breakdown = get_score_breakdown(conn, email, student)
     conn.close()
 
     return render_template(
