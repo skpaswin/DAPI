@@ -404,9 +404,9 @@
                   <td style="text-align: right;">
                     <div style="display: flex; gap: 8px; justify-content: flex-end;">
                       {% if c['file_path'] %}
-                        <a href="{{ url_for('static', filename=c['file_path'].replace('uploads/certificates/', 'uploads/certificates/')) }}" target="_blank" class="btn" style="padding: 6px 10px; background: rgba(99, 102, 241, 0.1); color: var(--primary);">
+                        <button type="button" onclick="openPreview('/static/{{ c['file_path'] }}', '{{ c['name'] }}')" class="btn" title="View Document" style="padding: 6px 10px; background: rgba(99, 102, 241, 0.1); color: var(--primary);">
                           <i data-lucide="eye" size="14"></i>
-                        </a>
+                        </button>
                       {% endif %}
                       <form method="post" style="display:inline">
                         <input type="hidden" name="form_type" value="cert_delete">
@@ -444,22 +444,35 @@
       <div class="card" style="margin-bottom: 24px;">
         <h3 style="font-size: 1.25rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
           <i data-lucide="bar-chart-3" size="18" style="color: var(--primary)"></i>
-          System Intelligence
+          DAPI Score Breakdown
         </h3>
-        <p class="sub" style="font-size: 0.85rem;">Metadata and system diagnostics for your profile.</p>
-        <div class="hr" style="margin: 16px 0;"></div>
-        <div style="display: flex; flex-direction: column; gap: 16px;">
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--muted); font-size: 0.9rem;">Identity Status</span>
-            <span class="badge" style="color: var(--accent);">VERIFIED</span>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.01); border-radius: 8px;">
+            <span style="font-size: 0.85rem; color: var(--muted);">CGPA (50m)</span>
+            <span style="font-weight: 700; color: var(--primary);">+{{ breakdown['cgpa_points'] }}</span>
           </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--muted); font-size: 0.9rem;">DAPI Index</span>
-            <span style="font-weight: 700; color: white;">v2.0.4</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.01); border-radius: 8px;">
+            <span style="font-size: 0.85rem; color: var(--muted);">Skills (30m)</span>
+            <span style="font-weight: 700; color: var(--accent);">+{{ breakdown['skill_points'] }}</span>
           </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--muted); font-size: 0.9rem;">Last Sync</span>
-            <span style="font-size: 0.9rem;">12 Mar 2026</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.01); border-radius: 8px;">
+            <span style="font-size: 0.85rem; color: var(--muted);">Achievements (10m)</span>
+            <span style="font-weight: 700; color: #f59e0b;">+{{ breakdown['ach_points'] }}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.01); border-radius: 8px;">
+            <span style="font-size: 0.85rem; color: var(--muted);">Certifications (10m)</span>
+            <span style="font-weight: 700; color: #10b981;">+{{ breakdown['cert_points'] }}</span>
+          </div>
+          {% if breakdown['penalty'] > 0 %}
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(239, 68, 68, 0.05); border-radius: 8px;">
+            <span style="font-size: 0.85rem; color: var(--danger);">Arrear Penalty</span>
+            <span style="font-weight: 700; color: var(--danger);">-{{ breakdown['penalty'] }}</span>
+          </div>
+          {% endif %}
+          <div class="hr" style="margin: 8px 0;"></div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(20, 184, 166, 0.1); border-radius: 8px; border: 1px solid rgba(20, 184, 166, 0.2);">
+            <span style="font-weight: 800; text-transform: uppercase; font-size: 0.9rem;">Total Score</span>
+            <span style="font-size: 1.25rem; font-weight: 800; color: var(--accent);">{{ breakdown['total'] }}</span>
           </div>
         </div>
       </div>
