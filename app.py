@@ -376,6 +376,10 @@ def register_student():
         present_days = safe_int(request.form.get("present_days"), 0)
         arrears = safe_int(request.form.get("arrear_count"), 0)
         
+        dte_umis_reg_no = request.form.get("dte_umis_reg_no","").strip()
+        application_no = request.form.get("application_no","").strip()
+        admission_no = request.form.get("admission_no","").strip()
+        
         hsc_cutoff = safe_float(request.form.get("hsc_cutoff"), 0.0)
         school_name = request.form.get("school_name", "").strip()
         custom_dept = request.form.get("custom_department", "").strip()
@@ -430,19 +434,20 @@ def register_student():
                  scholar_type, warden_name, room_no,
                  tenth, twelfth, semester_start, present_days, arrear_count,
                  sem1, sem2, sem3, sem4, sem5, sem6, sem7, sem8,
-                 batch, enrollment_no, register_no, gender, blood_group, dob,
-                 aadhar_no, father_name, mother_name, parent_occupation, parent_income,
+                 batch, enrollment_no, register_no, dte_umis_reg_no, application_no, admission_no,
+                 gender, blood_group, dob, aadhar_no, father_name, mother_name, parent_occupation, parent_income,
                  mother_tongue, community, religion, nationality,
                  physics_marks, chemistry_marks, maths_marks, cs_marks, biology_marks,
                  hsc_cutoff, school_name)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (login_email, student_id, roll, name, contact_email,
                   phone, parent_phone, address, department, mentor_name,
                   scholar_type, (warden_name if scholar_type=="Hosteller" else ""),
                   (room_no if scholar_type=="Hosteller" else ""),
                   tenth, twelfth, semester_start, max(0,present_days), max(0,arrears),
                   *sems,
-                  batch, enrollment_no, register_no, gender, blood_group, dob,
+                  batch, enrollment_no, register_no, dte_umis_reg_no, application_no, admission_no,
+                  gender, blood_group, dob,
                   aadhar_no, father_name, mother_name, parent_occupation, parent_income,
                   mother_tongue, community, religion, nationality,
                   physics_marks, chemistry_marks, maths_marks, cs_marks, biology_marks,
