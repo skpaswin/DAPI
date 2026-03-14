@@ -859,6 +859,9 @@ def staff_student_portal(sid):
             blood_group = request.form.get("blood_group","").strip()
             enrollment_no = request.form.get("enrollment_no","").strip()
             register_no = request.form.get("register_no","").strip()
+            dte_umis_reg_no = request.form.get("dte_umis_reg_no","").strip()
+            application_no = request.form.get("application_no","").strip()
+            admission_no = request.form.get("admission_no","").strip()
             father_name = request.form.get("father_name","").strip()
             mother_name = request.form.get("mother_name","").strip()
             aadhar_no = request.form.get("aadhar_no","").strip()
@@ -902,18 +905,20 @@ def staff_student_portal(sid):
                       department=?, mentor_name=?, scholar_type=?, warden_name=?, room_no=?,
                       batch=?, dob=?, gender=?, community=?, religion=?, nationality=?, 
                       mother_tongue=?, blood_group=?, enrollment_no=?, register_no=?, roll=?,
+                      dte_umis_reg_no=?, application_no=?, admission_no=?,
                       father_name=?, mother_name=?, aadhar_no=?, parent_occupation=?, parent_income=?,
                       semester_start=?, present_days=?, arrear_count=?,
                       physics_marks=?, chemistry_marks=?, maths_marks=?, cs_marks=?, biology_marks=?,
                       hsc_cutoff=?, school_name=?,
                       sem1=?, sem2=?, sem3=?, sem4=?, sem5=?, sem6=?, sem7=?, sem8=?
-                    WHERE id=?
+                     WHERE id=?
                 """, (name, contact_email, phone, parent_phone, address,
                       department, mentor_name, scholar_type,
                       (warden_name if scholar_type=="Hosteller" else ""),
                       (room_no if scholar_type=="Hosteller" else ""),
                       batch, dob, gender, community, religion, nationality,
                       mother_tongue, blood_group, enrollment_no, register_no, request.form.get("roll","").strip(),
+                      dte_umis_reg_no, application_no, admission_no,
                       father_name, mother_name, aadhar_no, parent_occupation, parent_income,
                       semester_start, present_days, arrears,
                       p_marks, c_marks, m_marks, cs_marks, b_marks,
