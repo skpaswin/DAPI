@@ -299,10 +299,8 @@
       if (targetStepNum < currentStepNum) {
         goToStep(targetStepNum);
       } else if (targetStepNum > currentStepNum) {
-        // Basic requirement: must validate current step to move forward
-        if (validateStep(currentStepNum)) {
-          goToStep(targetStepNum);
-        }
+        // Allow free navigation between tabs as requested
+        goToStep(targetStepNum);
       }
     });
   });
