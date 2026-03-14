@@ -147,6 +147,16 @@ def init_db():
     """)
 
     conn.commit()
+    
+    # Migration: Add new columns if they don't exist
+    try:
+        conn.execute("ALTER TABLE students ADD COLUMN hsc_cutoff REAL")
+    except: pass
+    try:
+        conn.execute("ALTER TABLE students ADD COLUMN school_name TEXT")
+    except: pass
+    conn.commit()
+    
     conn.close()
 
 

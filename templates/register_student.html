@@ -1,249 +1,338 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card">
-  <h2>Student Register</h2>
-  <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
-  <a class="btn btn-danger" href="/logout">Logout</a>
-  <a class="btn" href="/">Back to Login</a>
+<div class="fade-in" style="max-width: 900px; margin: 0 auto;">
+  <div style="text-align: center; margin-bottom: 48px;">
+    <h1 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 12px;">Register New Student</h1>
+    <p class="sub">Add a new student to the DAPI institutional ecosystem.</p>
+  </div>
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <!-- Step Indicator -->
+    <div style="display: flex; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border);">
+      <div id="step-1-indicator" class="step-link active clickable-step" data-step="1" style="flex: 1; padding: 20px; text-align: center; border-right: 1px solid var(--border); cursor: pointer;">
+        <span class="step-num">1</span>
+        <span class="step-label">Account</span>
+      </div>
+      <div id="step-2-indicator" class="step-link clickable-step" data-step="2" style="flex: 1; padding: 20px; text-align: center; border-right: 1px solid var(--border); cursor: pointer;">
+        <span class="step-num">2</span>
+        <span class="step-label">Profile</span>
+      </div>
+      <div id="step-3-indicator" class="step-link clickable-step" data-step="3" style="flex: 1; padding: 20px; text-align: center; border-right: 1px solid var(--border); cursor: pointer;">
+        <span class="step-num">3</span>
+        <span class="step-label">Academic</span>
+      </div>
+      <div id="step-4-indicator" class="step-link clickable-step" data-step="4" style="flex: 1; padding: 20px; text-align: center; cursor: pointer;">
+        <span class="step-num">4</span>
+        <span class="step-label">Skills</span>
+      </div>
+    </div>
+
+    <form method="post" id="registration-form" style="padding: 40px;">
+      <!-- STEP 1: ACCOUNT -->
+      <div class="registration-step" id="step-1">
+        <h3 style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+          <i data-lucide="shield-check" style="color: var(--primary)"></i>
+          Institutional Credentials
+        </h3>
+        <div class="field">
+          <label>Institutional Login Email</label>
+          <input name="login_email" type="email" placeholder="name.student@gmail.com" required>
+          <p class="sub" style="font-size: 0.8rem; margin-top: 8px;">Must end with <b>.student@gmail.com</b></p>
+        </div>
+        <div class="field">
+          <label>Secure Password</label>
+          <input type="password" name="login_pass" placeholder="••••••••" required>
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-top: 32px;">
+          <button type="button" class="btn btn-primary next-step" data-next="2">
+            <span>Continue to Profile</span>
+            <i data-lucide="arrow-right" size="18"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: PROFILE -->
+      <div class="registration-step" id="step-2" style="display: none;">
+        <h3 style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+          <i data-lucide="user" style="color: var(--primary)"></i>
+          Personal Information
+        </h3>
+        <div class="row">
+          <div class="field"><label>Full Legal Name</label><input name="name" required></div>
+          <div class="field"><label>Batch</label><input name="batch" placeholder="e.g. 2023" required></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Student ID</label><input name="student_id" placeholder="e.g. S12345" required></div>
+          <div class="field"><label>Enrollment No</label><input name="enrollment_no"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Roll Number</label><input name="roll" required></div>
+          <div class="field"><label>Register No</label><input name="register_no"></div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Gender</label>
+            <select name="gender" required>
+              <option value="">Select Gender</option>
+              <option value="MALE">MALE</option>
+              <option value="FEMALE">FEMALE</option>
+            </select>
+          </div>
+          <div class="field"><label>Blood Group</label><input name="blood_group"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>DOB (Institutional)</label><input type="date" name="dob" required></div>
+          <div class="field"><label>Aadhar Number</label><input name="aadhar_no"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Primary Phone</label><input name="phone" required></div>
+          <div class="field"><label>Contact Email</label><input name="contact_email" type="email" required></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Father Name</label><input name="father_name" required></div>
+          <div class="field"><label>Mother Name</label><input name="mother_name" required></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Parent/Guardian Phone</label><input name="parent_phone" required></div>
+          <div class="field"><label>Parent Occupation</label><input name="parent_occupation"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Annual Parent Income (₹)</label><input type="number" name="parent_income"></div>
+          <div class="field"><label>Mother Tongue</label><input name="mother_tongue"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Community</label><input name="community"></div>
+          <div class="field"><label>Religion</label><input name="religion"></div>
+        </div>
+        <div class="field"><label>Nationality</label><input name="nationality" value="INDIAN"></div>
+        <div class="field"><label>Residential Address</label><textarea name="address" rows="2" required></textarea></div>
+        
+        <div style="display: flex; justify-content: space-between; margin-top: 32px;">
+          <button type="button" class="btn prev-step" data-prev="1">Back</button>
+          <button type="button" class="btn btn-primary next-step" data-next="3">
+            <span>Academic Details</span>
+            <i data-lucide="arrow-right" size="18"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 3: ACADEMIC -->
+      <div class="registration-step" id="step-3" style="display: none;">
+        <h3 style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+          <i data-lucide="graduation-cap" style="color: var(--primary)"></i>
+          Academic Standing
+        </h3>
+        <div class="row">
+          <div class="field">
+            <label>Department</label>
+            <select name="department" id="dept-select" required>
+              <option value="">Select Department</option>
+              <option value="COMPUTER SCIENCE">COMPUTER SCIENCE (CSE)</option>
+              <option value="INFORMATION TECHNOLOGY">INFORMATION TECHNOLOGY (IT)</option>
+              <option value="ARTIFICIAL INTELLIGENCE">ARTIFICIAL INTELLIGENCE (AI)</option>
+              <option value="DATA SCIENCE">DATA SCIENCE (DS)</option>
+              <option value="ELECTRONICS & COMMUNICATION">ELECTRONICS & COMMUNICATION (ECE)</option>
+              <option value="ELECTRICAL & ELECTRONICS">ELECTRICAL & ELECTRONICS (EEE)</option>
+              <option value="MECHANICAL">MECHANICAL (MECH)</option>
+              <option value="CIVIL">CIVIL</option>
+              <option value="BIOTECHNOLOGY">BIOTECHNOLOGY</option>
+              <option value="FASHION TECHNOLOGY">FASHION TECHNOLOGY (FT)</option>
+              <option value="OTHER">OTHER (CUSTOM ENTRY)</option>
+            </select>
+            <div id="custom-dept-field" style="display: none; margin-top: 12px;">
+              <input name="custom_department" placeholder="Enter custom department name" style="text-transform: uppercase;">
+            </div>
+          </div>
+          <div class="field"><label>Mentor Name</label><input name="mentor_name" required></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>10th Aggregate (%)</label><input type="number" step="0.01" name="tenth" required></div>
+          <div class="field"><label>12th Aggregate (%)</label><input type="number" step="0.01" name="twelfth" required></div>
+          <div class="field"><label>12th Cutoff (e.g. 195.5)</label><input type="number" step="0.01" name="hsc_cutoff"></div>
+        </div>
+        <div class="field"><label>School Studied</label><input name="school_name" placeholder="e.g. Higher Secondary School Name"></div>
+        <h4 style="margin-top: 16px; margin-bottom: 12px; font-size: 0.9rem; color: var(--muted); text-transform: uppercase;">12th Marks (HSC)</h4>
+        <div class="row">
+          <div class="field"><label>Physics</label><input type="number" step="0.01" name="physics_marks" value="0"></div>
+          <div class="field"><label>Chemistry</label><input type="number" step="0.01" name="chemistry_marks" value="0"></div>
+          <div class="field"><label>Maths</label><input type="number" step="0.01" name="maths_marks" value="0"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Computer Science</label><input type="number" step="0.01" name="cs_marks" value="0"></div>
+          <div class="field"><label>Biology</label><input type="number" step="0.01" name="biology_marks" value="0"></div>
+        </div>
+        <hr style="border-color: var(--border); margin: 24px 0;">
+        <div class="row">
+          <div class="field"><label>Current Semester Start</label><input type="date" name="semester_start" value="2026-01-01" required></div>
+          <div class="field"><label>Initial Arrear Count</label><input type="number" name="arrear_count" value="0" required></div>
+        </div>
+        <div class="field">
+          <label>Scholar Type</label>
+          <select name="scholar_type" id="scholar-select">
+            <option value="Day Scholar">Day Scholar</option>
+            <option value="Hosteller">Hosteller</option>
+          </select>
+        </div>
+        <div id="hostel-fields" style="display: none;" class="row fade-in">
+          <div class="field"><label>Warden Name</label><input name="warden_name"></div>
+          <div class="field"><label>Room Number</label><input name="room_no"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 32px;">
+          <button type="button" class="btn prev-step" data-prev="2">Back</button>
+          <button type="button" class="btn btn-primary next-step" data-next="4">
+            <span>Finalize Skills</span>
+            <i data-lucide="arrow-right" size="18"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 4: SKILLS & SUBMIT -->
+      <div class="registration-step" id="step-4" style="display: none;">
+        <h3 style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+          <i data-lucide="zap" style="color: var(--primary)"></i>
+          Initial Skill Matrix
+        </h3>
+        <p class="sub" style="margin-bottom: 24px;">Add your top technical competencies (can be updated later).</p>
+        
+        <div id="skills-container">
+          <div class="card skill-row" style="margin-bottom: 12px; padding: 16px; background: rgba(255,255,255,0.01);">
+            <div class="row" style="align-items: flex-end; margin-bottom: 0;">
+              <div class="field" style="margin: 0;"><label>Skill Name</label><input name="skill_name[]" placeholder="e.g. Python"></div>
+              <div class="field" style="margin: 0;"><label>Proficiency</label><input type="number" min="1" max="10" name="skill_levels[]" value="5"></div>
+              <button type="button" class="btn btn-danger remove-skill"><i data-lucide="trash-2" size="16"></i></button>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn" id="add-skill-btn" style="width: 100%; border: 1px dashed var(--border); margin-bottom: 32px;">
+          <i data-lucide="plus" size="18"></i>
+          <span>Add Another Skill</span>
+        </button>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 32px; gap: 16px;">
+          <button type="button" class="btn prev-step" data-prev="3">Back</button>
+          <button type="submit" class="btn btn-teal" style="flex: 1;">
+            <i data-lucide="check-circle" size="18"></i>
+            <span>Complete Registration</span>
+          </button>
+        </div>
+      </div>
+
+      {% if message %}<div class="toast ok">{{ message }}</div>{% endif %}
+      {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
+    </form>
+  </div>
 </div>
 
-  <p class="sub">Email must end with <b>.student@gmail.com</b></p>
-
-  <form method="post">
-
-    <h3>Login</h3>
-    <div class="row">
-      <div class="field"><label>Login Email</label><input name="login_email" placeholder='"name".student@gmail.com' required></div>
-      <div class="field"><label>Password</label><input type="password" name="login_pass" required></div>
+<template id="skill-template">
+  <div class="card skill-row fade-in" style="margin-bottom: 12px; padding: 16px; background: rgba(255,255,255,0.01);">
+    <div class="row" style="align-items: flex-end; margin-bottom: 0;">
+      <div class="field" style="margin: 0;"><label>Skill Name</label><input name="skill_name[]" placeholder="e.g. React"></div>
+      <div class="field" style="margin: 0;"><label>Proficiency</label><input type="number" min="1" max="10" name="skill_levels[]" value="5"></div>
+      <button type="button" class="btn btn-danger remove-skill"><i data-lucide="trash-2" size="16"></i></button>
     </div>
+  </div>
+</template>
 
-    <div class="hr"></div>
+<style>
+  .step-link { color: var(--muted); transition: all 0.3s ease; }
+  .step-link.active { color: var(--primary); background: rgba(99, 102, 241, 0.05); }
+  .step-num { 
+    display: inline-block; width: 24px; height: 24px; border-radius: 50%; 
+    background: var(--muted); color: white; margin-right: 8px; font-size: 0.8rem; font-weight: 800;
+  }
+  .active .step-num { background: var(--primary); }
+  .step-label { font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .registration-step { animation: slideIn 0.4s ease-out; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
 
-    <h3>Profile</h3>
-    <div class="row">
-      <div class="field"><label>Student ID</label><input name="student_id" required></div>
-      <div class="field"><label>Roll</label><input name="roll" required></div>
-    </div>
-    <div class="row">
-      <div class="field"><label>Name</label><input name="name" required></div>
-      <div class="field"><label>Contact Email</label><input name="contact_email" required></div>
-    </div>
-    <div class="row">
-      <div class="field"><label>Phone</label><input name="phone" required></div>
-      <div class="field"><label>Parent Phone</label><input name="parent_phone" required></div>
-    </div>
-    <div class="row">
-      <div class="field"><label>Department</label><input name="department" required></div>
-      <div class="field"><label>Mentor Name</label><input name="mentor_name" required></div>
-    </div>
-    <div class="field"><label>Address</label><input name="address" required></div>
-
-    <div class="row">
-      <div class="field">
-        <label>Hosteller / Day Scholar</label>
-        <select name="scholar_type" required>
-          <option value="Day Scholar">Day Scholar</option>
-          <option value="Hosteller">Hosteller</option>
-        </select>
-      </div>
-      <div class="field"><label>Warden Name (if Hosteller)</label><input name="warden_name"></div>
-    </div>
-    <div class="row">
-      <div class="field"><label>Room No (if Hosteller)</label><input name="room_no"></div>
-      <div class="field"><label>Arrear Count</label><input type="number" min="0" name="arrear_count" value="0" required></div>
-    </div>
-
-    <div class="row">
-      <div class="field"><label>10th</label><input name="tenth" required></div>
-      <div class="field"><label>12th</label><input name="twelfth" required></div>
-    </div>
-
-    <div class="hr"></div>
-
-    <h3>Attendance</h3>
-    <div class="row">
-      <div class="field"><label>Semester Start (YYYY-MM-DD)</label><input name="semester_start" value="2026-01-01" required></div>
-      <div class="field"><label>Present Days</label><input type="number" min="0" name="present_days" value="0" required></div>
-    </div>
-
-    <div class="hr"></div>
-
-    <h3>Semester SGPA (optional)</h3>
-    <div class="row">
-      {% for i in range(1,9) %}
-      <div class="field"><label>Sem {{ i }}</label><input name="sem{{ i }}"></div>
-      {% endfor %}
-    </div>
-
-    <div class="hr"></div>
-
-    <h3>Skills (optional)</h3>
-    <div id="skills-container">
-      <div class="card" style="margin-bottom:12px;">
-        <div class="row" style="align-items:flex-end; gap:10px; flex-wrap:wrap;">
-          <div class="field" style="flex:2"><label>Skill</label><input name="skill_name[]"></div>
-          <div class="field" style="flex:1"><label>Levels</label><input type="number" min="0" max="10" name="skill_levels[]" value="1"></div>
-          <div class="field" style="flex:1"><label>&nbsp;</label><button type="button" class="btn btn-danger remove-skill">Remove</button></div>
-        </div>
-      </div>
-    </div>
-    <button type="button" class="btn btn-primary" id="add-skill-btn">+ Add skill</button>
-
-    <div class="hr"></div>
-
-    <h3>Achievements (optional)</h3>
-    <div id="achievements-container">
-      <div class="card" style="margin-bottom:12px;">
-        <div class="row" style="align-items:flex-end; gap:10px; flex-wrap:wrap;">
-          <div class="field" style="flex:2"><label>Title</label><input name="ach_title[]"></div>
-          <div class="field" style="flex:1"><label>Completed</label><input type="number" min="0" max="10" name="ach_level[]" value="1"></div>
-          <div class="field" style="flex:2"><label>Dates</label><div class="ach-dates"></div></div>
-          <div class="field" style="flex:1"><label>&nbsp;</label><button type="button" class="btn btn-danger remove-ach">Remove</button></div>
-        </div>
-        <div class="field"><label>Description (optional)</label><input name="ach_desc[]"></div>
-        <input type="hidden" name="ach_dates[]">
-      </div>
-    </div>
-    <button type="button" class="btn btn-primary" id="add-ach-btn">+ Add achievement</button>
-
-    <div class="hr"></div>
-
-    <h3>Certifications (optional)</h3>
-    <div id="certs-container">
-      <div class="card" style="margin-bottom:12px;">
-        <div class="row" style="align-items:flex-end; gap:10px; flex-wrap:wrap;">
-          <div class="field" style="flex:2"><label>Name</label><input name="cert_name[]"></div>
-          <div class="field" style="flex:2"><label>Provider</label><input name="cert_provider[]"></div>
-          <div class="field" style="flex:2"><label>Issued Date</label><input type="date" name="cert_issue_date[]"></div>
-          <div class="field" style="flex:1"><label>&nbsp;</label><button type="button" class="btn btn-danger remove-cert">Remove</button></div>
-        </div>
-      </div>
-    </div>
-    <button type="button" class="btn btn-primary" id="add-cert-btn">+ Add certification</button>
-
-    <div class="hr"></div>
-
-    <button class="btn btn-teal" type="submit">Register</button>
-    {% if message %}<div class="toast ok">{{ message }}</div>{% endif %}
-    {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
-  </form>
-
-  <template id="ach-template">
-    <div class="card" style="margin-bottom:12px;">
-      <div class="row" style="align-items:flex-end; gap:10px; flex-wrap:wrap;">
-        <div class="field" style="flex:2"><label>Title</label><input name="ach_title[]"></div>
-        <div class="field" style="flex:1"><label>Completed</label><input type="number" min="0" max="10" name="ach_level[]" value="1"></div>
-        <div class="field" style="flex:2"><label>Dates</label><div class="ach-dates"></div></div>
-        <div class="field" style="flex:1"><label>&nbsp;</label><button type="button" class="btn btn-danger remove-ach">Remove</button></div>
-      </div>
-      <div class="field"><label>Description (optional)</label><input name="ach_desc[]"></div>
-      <input type="hidden" name="ach_dates[]">
-    </div>
-  </template>
-
-  <template id="skill-template">
-    <div class="card" style="margin-bottom:12px;">
-      <div class="row" style="align-items:flex-end; gap:10px; flex-wrap:wrap;">
-        <div class="field" style="flex:2"><label>Skill</label><input name="skill_name[]"></div>
-        <div class="field" style="flex:1"><label>Levels</label><input type="number" min="0" max="10" name="skill_levels[]" value="1"></div>
-        <div class="field" style="flex:1"><label>&nbsp;</label><button type="button" class="btn btn-danger remove-skill">Remove</button></div>
-      </div>
-    </div>
-  </template>
-
-  <template id="cert-template">
-    <div class="card" style="margin-bottom:12px;">
-      <div class="row" style="align-items:flex-end; gap:10px; flex-wrap:wrap;">
-        <div class="field" style="flex:2"><label>Name</label><input name="cert_name[]"></div>
-        <div class="field" style="flex:2"><label>Provider</label><input name="cert_provider[]"></div>
-        <div class="field" style="flex:2"><label>Issued Date</label><input type="date" name="cert_issue_date[]"></div>
-        <div class="field" style="flex:1"><label>&nbsp;</label><button type="button" class="btn btn-danger remove-cert">Remove</button></div>
-      </div>
-    </div>
-  </template>
-
-  <script>
-    const achContainer = document.getElementById('achievements-container');
-    const achTemplate = document.getElementById('ach-template');
-    const certContainer = document.getElementById('certs-container');
-    const certTemplate = document.getElementById('cert-template');
-    const skillsContainer = document.getElementById('skills-container');
-    const skillTemplate = document.getElementById('skill-template');
-
-    function updateAchDates(row) {
-      const levelInput = row.querySelector('input[name="ach_level[]"]');
-      const datesContainer = row.querySelector('.ach-dates');
-      const hidden = row.querySelector('input[name="ach_dates[]"]');
-
-      const level = Math.max(0, Math.min(10, parseInt(levelInput.value) || 0));
-      datesContainer.innerHTML = '';
-
-      const dates = [];
-      for (let i = 1; i <= level; i++) {
-        const wrapper = document.createElement('div');
-        wrapper.style.marginBottom = '6px';
-        const label = document.createElement('label');
-        label.textContent = `Date ${i}`;
-        const input = document.createElement('input');
-        input.type = 'date';
-        input.style.width = '100%';
-        input.addEventListener('change', () => {
-          const all = Array.from(datesContainer.querySelectorAll('input')).map(i=>i.value).filter(Boolean);
-          hidden.value = all.join(',');
-        });
-        wrapper.appendChild(label);
-        wrapper.appendChild(input);
-        datesContainer.appendChild(wrapper);
-        dates.push('');
-      }
-      hidden.value = dates.join(',');
-    }
-
-    function addAchievement() {
-      const row = achTemplate.content.firstElementChild.cloneNode(true);
-      const levelInput = row.querySelector('input[name="ach_level[]"]');
-      updateAchDates(row);
-      levelInput.addEventListener('input', () => updateAchDates(row));
-      row.querySelector('.remove-ach').addEventListener('click', () => row.remove());
-      achContainer.appendChild(row);
-    }
-
-    function addCertification() {
-      const row = certTemplate.content.firstElementChild.cloneNode(true);
-      row.querySelector('.remove-cert').addEventListener('click', () => row.remove());
-      certContainer.appendChild(row);
-    }
-
-    function addSkill() {
-      const row = skillTemplate.content.firstElementChild.cloneNode(true);
-      row.querySelector('.remove-skill').addEventListener('click', () => row.remove());
-      skillsContainer.appendChild(row);
-    }
-
-    document.getElementById('add-ach-btn').addEventListener('click', addAchievement);
-    document.getElementById('add-cert-btn').addEventListener('click', addCertification);
-    document.getElementById('add-skill-btn').addEventListener('click', addSkill);
-
-    // Initialize any pre-existing rows (from server-side HTML)
-    achContainer.querySelectorAll('.remove-ach').forEach(btn => {
-      const row = btn.closest('.card');
-      btn.addEventListener('click', () => row.remove());
-      const levelInput = row.querySelector('input[name="ach_level[]"]');
-      if (levelInput) {
-        levelInput.addEventListener('input', () => updateAchDates(row));
-        updateAchDates(row);
+<script>
+  // Step Navigation
+  document.querySelectorAll('.next-step').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const currentStep = btn.closest('.registration-step');
+      const nextStepId = `step-${btn.dataset.next}`;
+      
+      // Basic validation
+      const inputs = currentStep.querySelectorAll('input[required], select[required], textarea[required]');
+      let valid = true;
+      inputs.forEach(i => { if(!i.value) { i.style.borderColor = 'var(--danger)'; valid = false; } else { i.style.borderColor = ''; } });
+      
+      if(valid) {
+        currentStep.style.display = 'none';
+        document.getElementById(nextStepId).style.display = 'block';
+        document.querySelectorAll('.step-link').forEach(l => l.classList.remove('active'));
+        document.getElementById(`${nextStepId}-indicator`).classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     });
+  });
 
-    certContainer.querySelectorAll('.remove-cert').forEach(btn => {
-      const row = btn.closest('.card');
-      btn.addEventListener('click', () => row.remove());
+  document.querySelectorAll('.prev-step').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const prevStep = btn.dataset.prev;
+      goToStep(prevStep);
     });
+  });
 
-    skillsContainer.querySelectorAll('.remove-skill').forEach(btn => {
-      const row = btn.closest('.card');
-      btn.addEventListener('click', () => row.remove());
+  // Clickable indicators
+  document.querySelectorAll('.clickable-step').forEach(indicator => {
+    indicator.addEventListener('click', () => {
+      const targetStep = indicator.dataset.step;
+      // Allow moving to any step that comes before or is current
+      const currentActive = document.querySelector('.registration-step:not([style*="display: none"])');
+      const currentStepNum = parseInt(currentActive.id.split('-')[1]);
+      const targetStepNum = parseInt(targetStep);
+      
+      if (targetStepNum < currentStepNum) {
+        goToStep(targetStep);
+      } else if (targetStepNum > currentStepNum) {
+        // Force validation if moving forward
+        const nextBtn = currentActive.querySelector('.next-step');
+        if (nextBtn) nextBtn.click();
+      }
     });
-  </script>
-</div>
+  });
+
+  function goToStep(stepNum) {
+    document.querySelectorAll('.registration-step').forEach(s => s.style.display = 'none');
+    document.getElementById(`step-${stepNum}`).style.display = 'block';
+    document.querySelectorAll('.step-link').forEach(l => l.classList.remove('active'));
+    document.getElementById(`step-${stepNum}-indicator`).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Department Toggle
+  const deptSelect = document.getElementById('dept-select');
+  const customDeptField = document.getElementById('custom-dept-field');
+  deptSelect.addEventListener('change', () => {
+    customDeptField.style.display = deptSelect.value === 'OTHER' ? 'block' : 'none';
+  });
+
+  // Scholar Type Toggle
+  const scholarSelect = document.getElementById('scholar-select');
+  const hostelFields = document.getElementById('hostel-fields');
+  scholarSelect.addEventListener('change', () => {
+    hostelFields.style.display = scholarSelect.value === 'Hosteller' ? 'flex' : 'none';
+  });
+
+  // Skills Management
+  const skillsContainer = document.getElementById('skills-container');
+  const skillTemplate = document.getElementById('skill-template');
+  
+  document.getElementById('add-skill-btn').addEventListener('click', () => {
+    const row = skillTemplate.content.firstElementChild.cloneNode(true);
+    row.querySelector('.remove-skill').addEventListener('click', () => row.remove());
+    skillsContainer.appendChild(row);
+    lucide.createIcons();
+  });
+
+  document.querySelectorAll('.remove-skill').forEach(btn => {
+    btn.addEventListener('click', () => btn.closest('.skill-row').remove());
+  });
+</script>
 {% endblock %}
