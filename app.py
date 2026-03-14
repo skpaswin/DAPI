@@ -233,7 +233,7 @@ def validate_email_role(email: str, role: str) -> bool:
     return False
 
 
-def calc_placement_score(conn, student_email: str, student_row):
+def get_score_breakdown(conn, student_email: str, student_row):
     # CGPA up to 50
     cg = calc_cgpa(student_row) or 0.0
     cg_part = (cg / 10.0) * 50.0
@@ -243,29 +243,40 @@ def calc_placement_score(conn, student_email: str, student_row):
         "SELECT COALESCE(SUM(levels_completed),0) AS s FROM skills WHERE student_email=?",
         (student_email,)
     ).fetchone()["s"]
-    skill_part = min(30.0, (skill_total / 100.0) * 30.0)  # assume 10 skills * 10 levels
+    skill_part = min(30.0, (skill_total / 100.0) * 30.0)
 
     # Achievements up to 10
     ach_count = conn.execute(
         "SELECT COUNT(*) AS c FROM achievements WHERE student_email=?",
         (student_email,)
     ).fetchone()["c"]
-    ach_part = min(10.0, ach_count * 2.5)  # 4 achievements => 10
+    ach_part = min(10.0, ach_count * 2.5)
 
-    # Certifications up to 10 (ONLY VERIFIED)
+    # Certifications up to 10
     cert_count = conn.execute(
         "SELECT COUNT(*) AS c FROM certifications WHERE student_email=? AND status='Verified'",
         (student_email,)
     ).fetchone()["c"]
-    cert_part = min(10.0, cert_count * 2.0)  # 5 certs => 10
+    cert_part = min(10.0, cert_count * 2.0)
 
-    # Arrears penalty up to -40
+    # Arrears penalty
     arrears = max(0, int(student_row["arrear_count"] or 0))
     penalty = min(40.0, arrears * 10.0)
 
-    score_val: float = float(cg_part + skill_part + ach_part + cert_part - penalty)
-    score_val = max(0.0, min(100.0, score_val))
-    return float(f"{score_val:.2f}")
+    total = max(0.0, min(100.0, cg_part + skill_part + ach_part + cert_part - penalty))
+    
+    return {
+        "cgpa_points": round(cg_part, 2),
+        "skill_points": round(skill_part, 2),
+        "ach_points": round(ach_part, 2),
+        "cert_points": round(cert_part, 2),
+        "penalty": round(penalty, 2),
+        "total": round(total, 2)
+    }
+
+def calc_placement_score(conn, student_email: str, student_row):
+    breakdown = get_score_breakdown(conn, student_email, student_row)
+    return breakdown["total"]
 
 
 def refresh_score(conn, student_email: str):
@@ -1017,22 +1028,26 @@ def staff_student_portal(sid):
             name = request.form.get("name","").strip()
             provider = request.form.get("provider","").strip()
             issue_date = request.form.get("issue_date","").strip()
+            credential_url = request.form.get("credential_url","").strip()
+            
+            file = request.files.get("cert_file")
+            file_path = None
+            
             if not name:
                 error = "Certification name required"
             else:
-                if issue_date:
-                    try:
-                        parse_ymd(issue_date)
-                    except:
-                        error = "Certification date must be YYYY-MM-DD"
-                if error is None:
-                    conn.execute(
-                        "INSERT INTO certifications (student_email, name, provider, issue_date) VALUES (?,?,?,?)",
-                        (student["user_email"], name, provider, issue_date or None)
-                    )
-                    conn.commit()
-                    refresh_score(conn, student["user_email"])
-                    message = "Certification added ✅"
+                if file and file.filename != "":
+                    filename = secure_filename(f"{student['user_email']}_{datetime.now().timestamp()}_{file.filename}")
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    file_path = f"uploads/certificates/{filename}"
+
+                conn.execute("""
+                    INSERT INTO certifications(student_email, name, provider, issue_date, credential_url, file_path, status)
+                    VALUES(?,?,?,?,?,?,?)
+                """, (student["user_email"], name, provider, issue_date, credential_url, file_path, 'Verified'))
+                conn.commit()
+                refresh_score(conn, student["user_email"])
+                message = "Certification added & verified ✅"
 
         elif form_type == "cert_edit":
             cid = safe_int(request.form.get("id"), 0)
@@ -1087,6 +1102,7 @@ def staff_student_portal(sid):
     certs = conn.execute("SELECT * FROM certifications WHERE student_email=? ORDER BY id DESC",
                          (student["user_email"],)).fetchall()
 
+    breakdown = get_score_breakdown(conn, student["user_email"], student)
     conn.close()
 
     return render_template(
@@ -1100,6 +1116,7 @@ def staff_student_portal(sid):
         attendance_pct=attendance_pct,
         cgpa=cgpa,
         score=student["placement_score"],
+        breakdown=breakdown,
         sgpas=sgpas,
         skills=skills,
         achievements=achievements,
