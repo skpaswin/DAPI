@@ -258,7 +258,11 @@
                   <td style="text-align: right;">
                     <div style="display: flex; gap: 8px; justify-content: flex-end;">
                       {% if c['file_path'] %}
-                        <button type="button" onclick='openPreview("/static/{{ c['file_path'] }}", {{ c['name']|tojson }})' class="btn" title="View Document" style="padding: 6px 10px; background: rgba(99, 102, 241, 0.1); color: var(--primary);">
+                        <button type="button" 
+                          data-url="/static/{{ c['file_path'] }}" 
+                          data-name="{{ c['name'] }}" 
+                          onclick="openPreviewFromData(this)" 
+                          class="btn" title="View Document" style="padding: 6px 10px; background: rgba(99, 102, 241, 0.1); color: var(--primary);">
                           <i data-lucide="eye" size="14"></i>
                         </button>
                         <a href="{{ url_for('static', filename=c['file_path']) }}" target="_blank" class="btn" title="Open Full Screen" style="padding: 6px 10px; background: rgba(255,255,255,0.05); color: var(--muted);">
@@ -365,6 +369,10 @@
 </div>
 
 <script>
+  function openPreviewFromData(btn) {
+    openPreview(btn.getAttribute('data-url'), btn.getAttribute('data-name'));
+  }
+
   function openPreview(url, name) {
     const modal = document.getElementById('preview-modal');
     const title = document.getElementById('modal-title');
