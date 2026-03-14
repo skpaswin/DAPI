@@ -48,12 +48,11 @@
 
       <div style="padding: 32px;">
         {% if tab == "profile" %}
-            <div>
-              <h3 style="margin: 0">Academic Profile Oversight</h3>
-              <p class="sub" style="margin: 0">Modify the student's core attributes and academic markers.</p>
-            </div>
+          <div style="margin-bottom: 24px;">
+            <h3 style="margin: 0">Academic Profile Oversight</h3>
+            <p class="sub" style="margin: 0">Modify the student's core attributes and academic markers.</p>
           </div>
-
+          
           {% if message %}<div class="toast ok"><i data-lucide="check-circle" size="18"></i>{{ message }}</div>{% endif %}
           {% if error %}<div class="toast error"><i data-lucide="alert-circle" size="18"></i>{{ error }}</div>{% endif %}
           
