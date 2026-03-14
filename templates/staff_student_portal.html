@@ -82,6 +82,11 @@
                   <div class="field"><label>Roll Number</label><input name="roll" value="{{ student['roll'] }}"></div>
                 </div>
                 <div class="row">
+                  <div class="field"><label>DTE UMIS No</label><input name="dte_umis_reg_no" value="{{ student['dte_umis_reg_no'] or '' }}"></div>
+                  <div class="field"><label>Application No</label><input name="application_no" value="{{ student['application_no'] or '' }}"></div>
+                  <div class="field"><label>Admission No</label><input name="admission_no" value="{{ student['admission_no'] or '' }}"></div>
+                </div>
+                <div class="row">
                   <div class="field"><label>Gender</label>
                     <select name="gender" style="width: 100%;">
                       <option value="MALE" {% if student['gender']=='MALE' %}selected{% endif %}>MALE</option>
