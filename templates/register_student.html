@@ -251,52 +251,21 @@
 </style>
 
 <script>
-  // Step Navigation
-  document.querySelectorAll('.next-step').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const currentStep = btn.closest('.registration-step');
-      const nextStepId = `step-${btn.dataset.next}`;
-      
-      // Basic validation
-      const inputs = currentStep.querySelectorAll('input[required], select[required], textarea[required]');
-      let valid = true;
-      inputs.forEach(i => { if(!i.value) { i.style.borderColor = 'var(--danger)'; valid = false; } else { i.style.borderColor = ''; } });
-      
-      if(valid) {
-        currentStep.style.display = 'none';
-        document.getElementById(nextStepId).style.display = 'block';
-        document.querySelectorAll('.step-link').forEach(l => l.classList.remove('active'));
-        document.getElementById(`${nextStepId}-indicator`).classList.add('active');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Step Navigation Logic
+  function validateStep(stepNum) {
+    const stepDiv = document.getElementById(`step-${stepNum}`);
+    const inputs = stepDiv.querySelectorAll('input[required], select[required], textarea[required]');
+    let valid = true;
+    inputs.forEach(i => {
+      if(!i.value) {
+        i.style.borderColor = 'var(--danger)';
+        valid = false;
+      } else {
+        i.style.borderColor = '';
       }
     });
-  });
-
-  document.querySelectorAll('.prev-step').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const prevStep = btn.dataset.prev;
-      goToStep(prevStep);
-    });
-  });
-
-  // Clickable indicators
-  document.querySelectorAll('.clickable-step').forEach(indicator => {
-    indicator.addEventListener('click', () => {
-      const targetStep = indicator.dataset.step;
-      // Allow moving to any step that comes before or is current
-      const currentActive = document.querySelector('.registration-step:not([style*="display: none"])');
-      const currentStepNum = parseInt(currentActive.id.split('-')[1]);
-      const targetStepNum = parseInt(targetStep);
-      
-      if (targetStepNum < currentStepNum) {
-        goToStep(targetStep);
-      } else if (targetStepNum > currentStepNum) {
-        // Force validation if moving forward
-        const nextBtn = currentActive.querySelector('.next-step');
-        if (nextBtn) nextBtn.click();
-      }
-    });
-  });
+    return valid;
+  }
 
   function goToStep(stepNum) {
     document.querySelectorAll('.registration-step').forEach(s => s.style.display = 'none');
@@ -305,6 +274,38 @@
     document.getElementById(`step-${stepNum}-indicator`).classList.add('active');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  document.querySelectorAll('.next-step').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const currentStepNum = parseInt(btn.closest('.registration-step').id.split('-')[1]);
+      if (validateStep(currentStepNum)) {
+        goToStep(btn.dataset.next);
+      }
+    });
+  });
+
+  document.querySelectorAll('.prev-step').forEach(btn => {
+    btn.addEventListener('click', () => {
+      goToStep(btn.dataset.prev);
+    });
+  });
+
+  document.querySelectorAll('.clickable-step').forEach(indicator => {
+    indicator.addEventListener('click', () => {
+      const targetStepNum = parseInt(indicator.dataset.step);
+      const currentActive = document.querySelector('.registration-step:not([style*="display: none"])');
+      const currentStepNum = parseInt(currentActive.id.split('-')[1]);
+      
+      if (targetStepNum < currentStepNum) {
+        goToStep(targetStepNum);
+      } else if (targetStepNum > currentStepNum) {
+        // Basic requirement: must validate current step to move forward
+        if (validateStep(currentStepNum)) {
+          goToStep(targetStepNum);
+        }
+      }
+    });
+  });
 
   // Department Toggle
   const deptSelect = document.getElementById('dept-select');
