@@ -1,305 +1,281 @@
 {% extends "base.html" %}
 {% block content %}
-
-<div class="card">
-  <h2>Staff • Student</h2>
-  <p class="sub">{{ student.roll }} • {{ student.name }} • {{ student.department }}</p>
-
-  <!-- NAV TABS -->
-  <div style="display:flex; gap:10px; flex-wrap:wrap;">
-    <a class="btn" href="/staff">Back</a>
-    <a class="btn" href="/staff/student/{{ student.id }}?tab=profile">Profile</a>
-    <a class="btn" href="/staff/student/{{ student.id }}?tab=academics">Academics</a>
-    <a class="btn" href="/staff/student/{{ student.id }}?tab=skills">Skills</a>
-    <a class="btn" href="/staff/student/{{ student.id }}?tab=achievements">Achievements</a>
-    <a class="btn" href="/staff/student/{{ student.id }}?tab=certifications">Certifications</a>
-    <a class="btn btn-teal" href="/staff/student/{{ student.id }}?tab=edit">Edit</a>
+<div class="fade-in">
+  <!-- Back Action -->
+  <div style="margin-bottom: 24px;">
+    <a href="/staff" class="btn" style="background: transparent;">
+      <i data-lucide="chevron-left" size="18"></i>
+      <span>Back to Directory</span>
+    </a>
   </div>
 
-  <div class="hr"></div>
-
-  {% if message %}<div class="toast ok">{{ message }}</div>{% endif %}
-  {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
-
-  <!-- ================= PROFILE ================= -->
-  {% if tab == "profile" %}
-    <h3>Profile</h3>
-    <div class="toast ok">
-      <b>Score:</b> {{ score }} |
-      <b>CGPA:</b> {{ cgpa if cgpa is not none else "-" }}
-    </div>
-
-    <p><b>Login Email:</b> {{ student.user_email }}</p>
-    <p><b>Contact Email:</b> {{ student.contact_email }}</p>
-    <p><b>Phone:</b> {{ student.phone }}</p>
-    <p><b>Parent Phone:</b> {{ student.parent_phone }}</p>
-    <p><b>Mentor:</b> {{ student.mentor_name }}</p>
-    <p><b>Address:</b> {{ student.address }}</p>
-
-    <p><b>Scholar Type:</b> {{ student.scholar_type }}</p>
-    {% if student.scholar_type == "Hosteller" %}
-      <p><b>Warden:</b> {{ student.warden_name }}</p>
-      <p><b>Room:</b> {{ student.room_no }}</p>
-    {% endif %}
-
-  <!-- ================= ACADEMICS ================= -->
-  {% elif tab == "academics" %}
-    <h3>Academics</h3>
-    <div class="toast ok">
-      <b>Score:</b> {{ score }} |
-      <b>CGPA:</b> {{ cgpa if cgpa is not none else "-" }}
-    </div>
-
-    <div class="kpi">
-      <div class="k"><div class="t">Working Days</div><div class="v">{{ total_days }}</div></div>
-      <div class="k"><div class="t">Present</div><div class="v">{{ present }}</div></div>
-      <div class="k"><div class="t">Semester Start</div><div class="v">{{ student.semester_start }}</div></div>
-      <div class="k"><div class="t">Arrears</div><div class="v">{{ student.arrear_count }}</div></div>
-      <div class="k"><div class="t">Attendance</div><div class="v">{{ attendance_pct }}%</div></div>
-    </div>
-
-    <div class="hr"></div>
-
-    <div class="hr"></div>
-
-    <div class="hr"></div>
-
-    <h3>SGPA Graph</h3>
-    <canvas id="sgpaChart" height="90"></canvas>
-
-    <!-- ✅ FIXED SCRIPT (NO JS ERRORS) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-      const sgpaData = JSON.parse('{{ sgpas|tojson|safe }}');
-
-      new Chart(document.getElementById("sgpaChart"), {
-        type: "line",
-        data: {
-          labels: ["S1","S2","S3","S4","S5","S6","S7","S8"],
-          datasets: [{
-            label: "SGPA",
-            data: sgpaData,
-            spanGaps: true,
-            borderWidth: 2
-          }]
-        },
-        options: {
-          scales: { y: { beginAtZero: true, max: 10 } }
-        }
-      });
-    </script>
-
-  <!-- ================= SKILLS ================= -->
-  {% elif tab == "skills" %}
-    <h3>Skills</h3>
-    <div class="toast ok"><b>Score:</b> {{ score }}</div>
-
-    <form method="post" class="form-inline" style="margin-bottom: 16px;">
-      <input type="hidden" name="form_type" value="skill_add">
-      <input type="hidden" name="tab" value="skills">
-      <div class="row" style="gap:12px; align-items:flex-end;">
-        <div class="field"><label>Skill</label><input name="skill_name" placeholder="e.g. Python"></div>
-        <div class="field"><label>Levels</label><input type="number" min="0" max="10" name="levels_completed" value="0"></div>
-        <div class="field" style="margin-top:22px;"><button class="btn btn-teal">Add Skill</button></div>
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; gap: 20px; flex-wrap: wrap;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
+        <h1 style="font-size: 2.25rem; font-weight: 800; letter-spacing: -0.02em; margin: 0;">{{ student['name'] }}</h1>
+        <span class="badge" style="background: rgba(99, 102, 241, 0.1); color: var(--primary); border-color: rgba(99, 102, 241, 0.2);">{{ student['roll'] }}</span>
       </div>
-    </form>
+      <p class="sub" style="margin: 0;">Institutional Management Portal | Last synchronized today</p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+      <div class="card" style="padding: 12px 24px; display: flex; align-items: center; gap: 12px; background: rgba(20, 184, 166, 0.05); border-color: rgba(20, 184, 166, 0.1);">
+        <i data-lucide="activity" size="18" style="color: var(--accent)"></i>
+        <div>
+          <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">DAPI Score</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: white;">{{ student['placement_score'] }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <table class="table">
-      <thead>
-        <tr><th>Skill</th><th>Levels</th><th>Actions</th></tr>
-      </thead>
-      <tbody>
-        {% for s in skills %}
-        <tr>
+  <div class="grid">
+    <!-- Main Management Area -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div style="display: flex; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.01);">
+        <a href="?tab=profile" class="btn tab-link {% if tab=='profile' %}active{% endif %}">
+          <i data-lucide="user-cog" size="18"></i>
+          <span>Administrative Edit</span>
+        </a>
+        <a href="?tab=skills" class="btn tab-link {% if tab=='skills' %}active{% endif %}">
+          <i data-lucide="zap" size="18"></i>
+          <span>Skills Inventory</span>
+        </a>
+        <a href="?tab=achievements" class="btn tab-link {% if tab=='achievements' %}active{% endif %}">
+          <i data-lucide="award" size="18"></i>
+          <span>Awards & Honors</span>
+        </a>
+      </div>
+
+      <div style="padding: 32px;">
+        {% if tab == "profile" %}
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+            <div>
+              <h3 style="margin: 0">Academic Profile Oversight</h3>
+              <p class="sub" style="margin: 0">Modify the student's core attributes and academic markers.</p>
+            </div>
+          </div>
+          
           <form method="post">
-            <input type="hidden" name="tab" value="skills">
-            <input type="hidden" name="form_type" value="skill_edit">
-            <input type="hidden" name="id" value="{{ s.id }}">
-            <td><input name="skill_name" value="{{ s.skill_name }}"></td>
-            <td><input type="number" min="0" max="10" name="levels_completed" value="{{ s.levels_completed }}"></td>
-            <td style="display:flex; gap:8px;">
-              <button class="btn btn-teal">Save</button>
-              <button class="btn btn-danger" name="form_type" value="skill_delete">Delete</button>
-            </td>
+            <input type="hidden" name="form_type" value="edit">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 32px;">
+              <!-- Personal Metrics Column 1 -->
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <h4 style="color: var(--primary); margin-bottom: 8px; font-size: 0.9rem;">Identity & Contact</h4>
+                <div class="field"><label>Full Legal Name</label><input name="name" value="{{ student['name'] }}" required></div>
+                <div class="field"><label>Batch</label><input name="batch" value="{{ student['batch'] or '2023' }}" placeholder="e.g. 2023"></div>
+                <div class="field"><label>Official Email</label><input name="contact_email" value="{{ student['contact_email'] }}" required></div>
+                <div class="field"><label>Student Phone</label><input name="phone" value="{{ student['phone'] }}" required></div>
+                <div class="field"><label>Parent Phone</label><input name="parent_phone" value="{{ student['parent_phone'] }}" required></div>
+                <div class="field"><label>Parent Occupation</label><input name="parent_occupation" value="{{ student['parent_occupation'] }}"></div>
+              </div>
+
+              <!-- Personal Metrics Column 2 -->
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <h4 style="color: var(--primary); margin-bottom: 8px; font-size: 0.9rem;">Institutional Records</h4>
+                <div class="row">
+                  <div class="field"><label>Department</label><input name="department" value="{{ student['department'] }}"></div>
+                  <div class="field"><label>Mentor Name</label><input name="mentor_name" value="{{ student['mentor_name'] }}"></div>
+                </div>
+                <div class="row">
+                  <div class="field"><label>Enrollment No</label><input name="enrollment_no" value="{{ student['enrollment_no'] }}"></div>
+                  <div class="field"><label>Register No</label><input name="register_no" value="{{ student['register_no'] }}"></div>
+                </div>
+                <div class="row">
+                  <div class="field"><label>Gender</label>
+                    <select name="gender" style="width: 100%;">
+                      <option value="MALE" {% if student['gender']=='MALE' %}selected{% endif %}>MALE</option>
+                      <option value="FEMALE" {% if student['gender']=='FEMALE' %}selected{% endif %}>FEMALE</option>
+                    </select>
+                  </div>
+                  <div class="field"><label>Blood Group</label><input name="blood_group" value="{{ student['blood_group'] }}"></div>
+                </div>
+                <div class="field"><label>Aadhar Number</label><input name="aadhar_no" value="{{ student['aadhar_no'] }}"></div>
+                <div class="field"><label>Annual Parent Income (₹)</label><input name="parent_income" type="number" value="{{ student['parent_income'] }}"></div>
+              </div>
+            </div>
+
+            <div class="hr" style="margin: 24px 0;"></div>
+            
+            <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 32px; margin-bottom: 32px;">
+              <!-- Background Details -->
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                 <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 0.9rem;">Identity Background</h4>
+                 <div class="row">
+                   <div class="field"><label>Father Name</label><input name="father_name" value="{{ student['father_name'] }}"></div>
+                   <div class="field"><label>Mother Name</label><input name="mother_name" value="{{ student['mother_name'] }}"></div>
+                 </div>
+                 <div class="row">
+                   <div class="field"><label>Community</label><input name="community" value="{{ student['community'] }}"></div>
+                   <div class="field"><label>Religion</label><input name="religion" value="{{ student['religion'] }}"></div>
+                 </div>
+                 <div class="row">
+                   <div class="field"><label>Nationality</label><input name="nationality" value="{{ student['nationality'] or 'INDIAN' }}"></div>
+                   <div class="field"><label>Mother Tongue</label><input name="mother_tongue" value="{{ student['mother_tongue'] }}"></div>
+                 </div>
+                 <div class="field"><label>Permanent Address</label><textarea name="address" style="min-height: 80px;">{{ student['address'] }}</textarea></div>
+              </div>
+
+              <!-- Academic Baseline -->
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 0.9rem;">Academic Pulse</h4>
+                <div class="field"><label>Semester Start</label><input name="semester_start" type="date" value="{{ student['semester_start'] }}" required></div>
+                <div class="row">
+                  <div class="field"><label>Present Days</label><input name="present_days" type="number" value="{{ student['present_days'] }}"></div>
+                  <div class="field"><label>Arrear Count</label><input name="arrear_count" type="number" value="{{ student['arrear_count'] }}"></div>
+                </div>
+                <div class="field"><label>DOB (Institutional)</label><input name="dob" type="date" value="{{ student['dob'] }}"></div>
+              </div>
+            </div>
+
+            <div class="hr" style="margin: 24px 0;"></div>
+
+            <h4 style="color: var(--muted); margin-bottom: 16px; font-size: 0.9rem; text-transform: uppercase;">School Performance (HSC)</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 16px; margin-bottom: 32px;">
+                <div class="field"><label>Physics</label><input name="physics_marks" type="number" step="0.01" value="{{ student['physics_marks'] }}"></div>
+                <div class="field"><label>Chemistry</label><input name="chemistry_marks" type="number" step="0.01" value="{{ student['chemistry_marks'] }}"></div>
+                <div class="field"><label>Maths</label><input name="maths_marks" type="number" step="0.01" value="{{ student['maths_marks'] }}"></div>
+                <div class="field"><label>CS</label><input name="cs_marks" type="number" step="0.01" value="{{ student['cs_marks'] }}"></div>
+                <div class="field"><label>Biology</label><input name="biology_marks" type="number" step="0.01" value="{{ student['biology_marks'] }}"></div>
+                <div class="field"><label>12th Cutoff</label><input name="hsc_cutoff" type="number" step="0.01" value="{{ student['hsc_cutoff'] }}"></div>
+            </div>
+            <div class="field" style="margin-bottom: 32px;"><label>School Studied</label><input name="school_name" value="{{ student['school_name'] }}"></div>
+
+            <h4 style="color: var(--muted); margin-bottom: 16px; font-size: 0.9rem; text-transform: uppercase;">Semester SGPA Matrix</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 12px; margin-bottom: 32px;">
+              {% for i in range(1, 9) %}
+                <div class="field">
+                  <label>Sem {{ i }}</label>
+                  <input name="sem{{ i }}" type="number" step="0.01" value="{{ student['sem' ~ i] or '' }}" placeholder="0.0">
+                </div>
+              {% endfor %}
+            </div>
+            
+            <button class="btn btn-primary" type="submit" style="width: 100%; height: 50px; font-size: 1rem; margin-top: 12px;">
+              <i data-lucide="shield-check" size="20"></i>
+              <span>Finalize & Synchronize Records</span>
+            </button>
           </form>
-        </tr>
-        {% endfor %}
-        {% if skills|length == 0 %}
-          <tr><td colspan="3">No skills added.</td></tr>
+
+        {% elif tab == "skills" %}
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+            <div>
+              <h3 style="margin: 0">Skill Validation</h3>
+              <p class="sub" style="margin: 0">Audit and validate technical competencies.</p>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="table">
+              <thead><tr><th>Competency</th><th>Validation Level</th><th style="text-align: right;">Action</th></tr></thead>
+              <tbody>
+                {% for s in skills %}
+                <tr>
+                  <td style="font-weight: 600;">{{ s['skill_name'] }}</td>
+                  <td>{{ s['levels_completed'] }}/10</td>
+                  <td style="text-align: right;">
+                    <form method="post" style="display:inline">
+                      <input type="hidden" name="form_type" value="skill_delete">
+                      <input type="hidden" name="id" value="{{ s['id'] }}">
+                      <button class="btn btn-danger" style="padding: 6px 10px;"><i data-lucide="trash-2" size="14"></i></button>
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        {% elif tab == "achievements" %}
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+            <div>
+              <h3 style="margin: 0">Credential Verification</h3>
+              <p class="sub" style="margin: 0">Audit student-uploaded certificates and award placement points.</p>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Credential</th>
+                  <th>Authority</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Oversight</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in certs %}
+                <tr>
+                  <td>
+                    <div style="font-weight: 600;">{{ c['name'] }}</div>
+                    <div style="font-size: 0.75rem; color: var(--muted);">Issued: {{ c['issue_date'] }}</div>
+                  </td>
+                  <td>{{ c['provider'] }}</td>
+                  <td>
+                    {% if c['status'] == 'Verified' %}
+                      <span class="badge" style="background: rgba(20, 184, 166, 0.1); color: var(--accent);">Verified</span>
+                    {% elif c['status'] == 'Rejected' %}
+                      <span class="badge" style="background: rgba(239, 68, 68, 0.1); color: var(--danger);">Rejected</span>
+                    {% else %}
+                      <span class="badge" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">Pending Review</span>
+                    {% endif %}
+                  </td>
+                  <td style="text-align: right;">
+                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                      {% if c['file_path'] %}
+                        <a href="{{ url_for('static', filename=c['file_path'].replace('uploads/certificates/', 'uploads/certificates/')) }}" target="_blank" class="btn" title="View Document" style="padding: 6px 10px; background: rgba(99, 102, 241, 0.1); color: var(--primary);">
+                          <i data-lucide="external-link" size="14"></i>
+                        </a>
+                      {% endif %}
+                      
+                      {% if c['status'] == 'Pending' %}
+                        <form method="post" style="display:inline">
+                          <input type="hidden" name="form_type" value="cert_verify">
+                          <input type="hidden" name="id" value="{{ c['id'] }}">
+                          <input type="hidden" name="status" value="Verified">
+                          <button class="btn btn-teal" style="padding: 6px 10px;" title="Approve">
+                            <i data-lucide="check" size="14"></i>
+                          </button>
+                        </form>
+                        <form method="post" style="display:inline">
+                          <input type="hidden" name="form_type" value="cert_verify">
+                          <input type="hidden" name="id" value="{{ c['id'] }}">
+                          <input type="hidden" name="status" value="Rejected">
+                          <button class="btn btn-danger" style="padding: 6px 10px;" title="Reject">
+                            <i data-lucide="x" size="14"></i>
+                          </button>
+                        </form>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         {% endif %}
-      </tbody>
-    </table>
 
-  <!-- ================= EDIT ================= -->
-  {% elif tab == "edit" %}
-    <h3>Edit Student</h3>
-    <div class="toast ok"><b>Score:</b> {{ score }}</div>
-
-    <form method="post">
-      <input type="hidden" name="form_type" value="edit">
-
-      <h3>Profile</h3>
-      <div class="row">
-        <div class="field"><label>Name</label><input name="name" value="{{ student.name }}" required></div>
-        <div class="field"><label>Contact Email</label><input name="contact_email" value="{{ student.contact_email }}" required></div>
+        {% if message %}<div class="toast ok"><i data-lucide="check-circle" size="18"></i>{{ message }}</div>{% endif %}
+        {% if error %}<div class="toast error"><i data-lucide="alert-circle" size="18"></i>{{ error }}</div>{% endif %}
       </div>
-
-      <div class="row">
-        <div class="field"><label>Phone</label><input name="phone" value="{{ student.phone }}" required></div>
-        <div class="field"><label>Parent Phone</label><input name="parent_phone" value="{{ student.parent_phone }}" required></div>
-      </div>
-
-      <div class="row">
-        <div class="field"><label>Department</label><input name="department" value="{{ student.department }}" required></div>
-        <div class="field"><label>Mentor Name</label><input name="mentor_name" value="{{ student.mentor_name }}" required></div>
-      </div>
-
-      <div class="field"><label>Address</label><input name="address" value="{{ student.address }}" required></div>
-
-      <div class="hr"></div>
-
-      <h3>Hostel</h3>
-      <div class="row">
-        <div class="field">
-          <label>Scholar Type</label>
-          <select name="scholar_type">
-            <option value="Day Scholar" {% if student.scholar_type == "Day Scholar" %}selected{% endif %}>Day Scholar</option>
-            <option value="Hosteller" {% if student.scholar_type == "Hosteller" %}selected{% endif %}>Hosteller</option>
-          </select>
-        </div>
-        <div class="field"><label>Warden</label><input name="warden_name" value="{{ student.warden_name }}"></div>
-      </div>
-
-      <div class="row">
-        <div class="field"><label>Room No</label><input name="room_no" value="{{ student.room_no }}"></div>
-        <div class="field"><label>Arrears</label><input type="number" min="0" name="arrear_count" value="{{ student.arrear_count }}"></div>
-      </div>
-
-      <div class="hr"></div>
-
-      <h3>Academics</h3>
-      <div class="row">
-        <div class="field"><label>Semester Start</label><input name="semester_start" value="{{ student.semester_start }}"></div>
-        <div class="field"><label>Present Days</label><input type="number" min="0" name="present_days" value="{{ student.present_days }}"></div>
-      </div>
-
-      <div class="row">
-        {% for i in range(1,9) %}
-        <div class="field">
-          <label>Sem {{ i }}</label>
-          <input name="sem{{ i }}" value="{{ (student|attr('sem' ~ i)) if (student|attr('sem' ~ i)) is not none else '' }}">
-        </div>
-        {% endfor %}
-      </div>
-
-      <button class="btn btn-teal" type="submit">Save Changes</button>
-
-      {% if message %}<div class="toast ok">{{ message }}</div>{% endif %}
-      {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
-    </form>
-
-  <!-- ================= ACHIEVEMENTS ================= -->
-  {% elif tab == "achievements" %}
-    <h3>
-      Achievements
-      <a class="btn" style="float:right;" href="{{ url_for('staff_student_portal', sid=student.id) }}?tab=certifications">View Certifications</a>
-    </h3>
-
-    <div class="toast ok"><b>Score:</b> {{ score }}</div>
-
-    <div class="card">
-      <h3>Achievements</h3>
-
-      <form method="post" style="margin-bottom:16px;">
-        <input type="hidden" name="tab" value="achievements">
-        <input type="hidden" name="form_type" value="achievement_add">
-        <div class="row" style="gap:12px; align-items:flex-end;">
-          <div class="field"><label>Title</label><input name="title" placeholder="e.g. Paper Presentation"></div>
-          <div class="field"><label>Level</label><input name="level" placeholder="e.g. 1st, College"></div>
-          <div class="field"><label>Date</label><input type="date" name="date_str"></div>
-          <div class="field" style="margin-top:22px;"><button class="btn btn-teal">Add Achievement</button></div>
-        </div>
-      </form>
-
-      <table class="table">
-        <thead><tr><th>Title</th><th>Level</th><th>Date</th><th>Actions</th></tr></thead>
-        <tbody>
-          {% for a in achievements %}
-          <tr>
-            <form method="post">
-              <input type="hidden" name="tab" value="achievements">
-              <input type="hidden" name="form_type" value="achievement_edit">
-              <input type="hidden" name="id" value="{{ a.id }}">
-              <td><input name="title" value="{{ a.title }}"></td>
-              <td><input name="level" value="{{ a.level }}"></td>
-              <td><input type="date" name="date_str" value="{{ a.date_str }}"></td>
-              <td style="display:flex; gap:8px;">
-                <button class="btn btn-teal">Save</button>
-                <button class="btn btn-danger" name="form_type" value="achievement_delete">Delete</button>
-              </td>
-            </form>
-          </tr>
-          {% endfor %}
-          {% if achievements|length == 0 %}
-            <tr><td colspan="4">No achievements.</td></tr>
-          {% endif %}
-        </tbody>
-      </table>
     </div>
 
-  <!-- ================= CERTIFICATIONS ================= -->
-  {% elif tab == "certifications" %}
-    <h3>
-      Certifications
-      <a class="btn" style="float:right;" href="{{ url_for('staff_student_portal', sid=student.id) }}?tab=achievements">View Achievements</a>
-    </h3>
-
-    <div class="toast ok"><b>Score:</b> {{ score }}</div>
-
-    <div class="card">
-      <h3>Certifications</h3>
-
-      <form method="post" style="margin-bottom:16px;">
-        <input type="hidden" name="tab" value="certifications">
-        <input type="hidden" name="form_type" value="cert_add">
-        <div class="row" style="gap:12px; align-items:flex-end;">
-          <div class="field"><label>Name</label><input name="name" placeholder="e.g. AWS Cloud Practitioner"></div>
-          <div class="field"><label>Provider</label><input name="provider" placeholder="e.g. AWS"></div>
-          <div class="field"><label>Date</label><input type="date" name="issue_date"></div>
-          <div class="field" style="margin-top:22px;"><button class="btn btn-teal">Add Certification</button></div>
+    <!-- Stats Sidebar -->
+    <div class="fade-in">
+      <div class="card" style="margin-bottom: 24px;">
+        <h3 style="font-size: 1.1rem; margin-bottom: 20px; color: var(--muted); text-transform: uppercase;">Engagement Stats</h3>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.02); border-radius: 16px;">
+            <div style="font-size: 2rem; font-weight: 800; color: var(--accent);">{{ attendance_pct }}%</div>
+            <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase;">Attendance Integrity</div>
+          </div>
+          <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.02); border-radius: 16px;">
+            <div style="font-size: 2rem; font-weight: 800; color: var(--primary);">{{ cgpa or '0.0' }}</div>
+            <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase;">Academic Index (CGPA)</div>
+          </div>
         </div>
-      </form>
-
-      <table class="table">
-        <thead><tr><th>Name</th><th>Provider</th><th>Date</th><th>Actions</th></tr></thead>
-        <tbody>
-          {% for c in certs %}
-          <tr>
-            <form method="post">
-              <input type="hidden" name="tab" value="certifications">
-              <input type="hidden" name="form_type" value="cert_edit">
-              <input type="hidden" name="id" value="{{ c.id }}">
-              <td><input name="name" value="{{ c.name }}"></td>
-              <td><input name="provider" value="{{ c.provider }}"></td>
-              <td><input type="date" name="issue_date" value="{{ c.issue_date }}"></td>
-              <td style="display:flex; gap:8px;">
-                <button class="btn btn-teal">Save</button>
-                <button class="btn btn-danger" name="form_type" value="cert_delete">Delete</button>
-              </td>
-            </form>
-          </tr>
-          {% endfor %}
-          {% if certs|length == 0 %}
-            <tr><td colspan="4">No certifications.</td></tr>
-          {% endif %}
-        </tbody>
-      </table>
+      </div>
     </div>
-
-  {% else %}
-    <!-- fallback -->
-    <script>window.location.href = "/staff/student/{{ student.id }}?tab=achievements";</script>
-  {% endif %}
+  </div>
 </div>
-
 {% endblock %}

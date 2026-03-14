@@ -871,7 +871,7 @@ def staff_student_portal(sid):
             cs_marks = safe_float(request.form.get("cs_marks"), 0.0)
             b_marks = safe_float(request.form.get("biology_marks"), 0.0)
 
-            department = request.form.get("department", student["department"]).strip()
+            department = request.form.get("department", student["department"]).strip().upper()
             mentor_name = request.form.get("mentor_name", student["mentor_name"]).strip()
             scholar_type = request.form.get("scholar_type", student["scholar_type"]).strip()
             warden_name = request.form.get("warden_name","").strip()
@@ -898,6 +898,7 @@ def staff_student_portal(sid):
                       father_name=?, mother_name=?, aadhar_no=?, parent_occupation=?, parent_income=?,
                       semester_start=?, present_days=?, arrear_count=?,
                       physics_marks=?, chemistry_marks=?, maths_marks=?, cs_marks=?, biology_marks=?,
+                      hsc_cutoff=?, school_name=?,
                       sem1=?, sem2=?, sem3=?, sem4=?, sem5=?, sem6=?, sem7=?, sem8=?
                     WHERE id=?
                 """, (name, contact_email, phone, parent_phone, address,
@@ -909,6 +910,7 @@ def staff_student_portal(sid):
                       father_name, mother_name, aadhar_no, parent_occupation, parent_income,
                       semester_start, present_days, arrears,
                       p_marks, c_marks, m_marks, cs_marks, b_marks,
+                      hsc_cutoff, school_name,
                       *sems, sid))
                 conn.commit()
                 refresh_score(conn, student["user_email"])
