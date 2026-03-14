@@ -129,7 +129,19 @@
                   <div class="field"><label>Present Days</label><input name="present_days" type="number" value="{{ student['present_days'] }}"></div>
                   <div class="field"><label>Arrear Count</label><input name="arrear_count" type="number" value="{{ student['arrear_count'] }}"></div>
                 </div>
-                <div class="field"><label>DOB (Institutional)</label><input name="dob" type="date" value="{{ student['dob'] }}"></div>
+                <div class="row">
+                  <div class="field"><label>Scholar Type</label>
+                    <select name="scholar_type" onchange="this.value==='Hosteller' ? document.getElementById('hostel-fields').style.display='grid' : document.getElementById('hostel-fields').style.display='none'">
+                      <option value="Day Scholar" {% if student['scholar_type']=='Day Scholar' %}selected{% endif %}>Day Scholar</option>
+                      <option value="Hosteller" {% if student['scholar_type']=='Hosteller' %}selected{% endif %}>Hosteller</option>
+                    </select>
+                  </div>
+                  <div class="field"><label>DOB (Institutional)</label><input name="dob" type="date" value="{{ student['dob'] }}"></div>
+                </div>
+                <div id="hostel-fields" class="row" style="display: {% if student['scholar_type']=='Hosteller' %}grid{% else %}none{% endif %};">
+                  <div class="field"><label>Warden Name</label><input name="warden_name" value="{{ student['warden_name'] }}"></div>
+                  <div class="field"><label>Room No</label><input name="room_no" value="{{ student['room_no'] }}"></div>
+                </div>
               </div>
             </div>
 
@@ -303,7 +315,7 @@
     </div>
 
     <!-- Stats Sidebar -->
-    <div class="fade-in">
+    <aside class="fade-in" style="display: flex; flex-direction: column; gap: 24px;">
       <div class="card" style="margin-bottom: 24px;">
         <h3 style="font-size: 1.1rem; margin-bottom: 20px; color: var(--muted); text-transform: uppercase;">Engagement Stats</h3>
         <div style="display: flex; flex-direction: column; gap: 20px;">
