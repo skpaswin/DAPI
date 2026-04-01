@@ -8,6 +8,7 @@ import os
 import sys
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, TemplateSyntaxError
+import importlib
 
 def check_python_modules():
     """Check if all required Python modules can be imported"""
@@ -19,10 +20,10 @@ def check_python_modules():
     
     for module in modules:
         try:
-            __import__(module)
-            print(f"✅ {module:15} - OK")
+            importlib.import_module(module)
+            print(f"[OK] {module:15}")
         except ImportError as e:
-            print(f"❌ {module:15} - ERROR: {e}")
+            print(f"[ERROR] {module:15}: {e}")
             return False
     
     return True
@@ -49,14 +50,14 @@ def check_database():
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
         tables = cursor.fetchall()
         
-        print(f"✅ Database connected: {db_path}")
-        print(f"✅ Tables found: {len(tables)}")
+        print(f"[*] Database connected: {db_path}")
+        print(f"[*] Tables found: {len(tables)}")
         
         for table in tables:
             table_name = table[0]
             cursor.execute(f"PRAGMA table_info({table_name})")
             columns = cursor.fetchall()
-            print(f"   • {table_name:20} ({len(columns)} columns)")
+            print(f"   . {table_name:20} ({len(columns)} columns)")
         
         conn.close()
         return True
@@ -92,12 +93,12 @@ def check_templates():
         
         try:
             env.get_template(template_name)
-            print(f"✅ {template_name:30} - OK")
+            print(f"[OK] {template_name:30}")
         except TemplateSyntaxError as e:
-            print(f"❌ {template_name:30} - SYNTAX ERROR at line {e.lineno}: {e.message}")
+            print(f"[SYNTAX ERROR] {template_name:30} at line {e.lineno}: {e.message}")
             errors = True
         except Exception as e:
-            print(f"❌ {template_name:30} - ERROR: {e}")
+            print(f"[ERROR] {template_name:30}: {e}")
             errors = True
     
     return not errors
@@ -111,19 +112,21 @@ def check_app_module():
     
     try:
         import app
-        print(f"✅ app.py imports successfully")
-        print(f"✅ Flask app instance created: {app.app}")
-        print(f"✅ Database path configured: {app.db_path}")
-        print(f"✅ Logging configured")
+        print(f"[OK] app.py imports successfully")
+        print(f"[*] Flask app instance created: {app.app}")
+        print(f"[*] Database path configured: {app.db_path}")
+        print(f"[*] Logging configured")
         
         # Check routes
         routes = []
         for rule in app.app.url_map.iter_rules():
             if rule.endpoint != 'static':
-                routes.append(f"   • {rule.rule:30} ({rule.endpoint})")
+                routes.append(f"   . {rule.rule:30} ({rule.endpoint})")
         
-        print(f"✅ Routes registered: {len([r for r in routes if 'static' not in r])}")
-        for route in sorted(routes)[:5]:
+        print(f"[*] Routes registered: {len([r for r in routes if 'static' not in r])}")
+        for i, route in enumerate(sorted(routes)):
+            if i >= 5:
+                break
             print(route)
         if len(routes) > 5:
             print(f"   ... and {len(routes) - 5} more routes")
@@ -131,13 +134,13 @@ def check_app_module():
         return True
         
     except SyntaxError as e:
-        print(f"❌ Syntax error in app.py: {e}")
+        print(f"[ERROR] Syntax error in app.py: {e}")
         return False
     except ImportError as e:
-        print(f"❌ Missing import in app.py: {e}")
+        print(f"[ERROR] Missing import in app.py: {e}")
         return False
     except Exception as e:
-        print(f"❌ Error loading app.py: {e}")
+        print(f"[ERROR] Error loading app.py: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -164,7 +167,7 @@ def check_static_files():
     for file in sorted(static_files):
         if file.is_file():
             size = file.stat().st_size
-            print(f"✅ {file.name:30} ({size:,} bytes)")
+            print(f"[OK] {file.name:30} ({size:,} bytes)")
     
     return True
 
@@ -191,9 +194,9 @@ def check_logs():
     for log_file in sorted(log_files):
         size = log_file.stat().st_size
         total_size += size
-        print(f"✅ {log_file.name:30} ({size:,} bytes)")
+        print(f"[OK] {log_file.name:30} ({size:,} bytes)")
     
-    print(f"✅ Total logs size: {total_size:,} bytes ({total_size / 1024 / 1024:.2f} MB)")
+    print(f"[*] Total logs size: {total_size:,} bytes ({total_size / 1024 / 1024:.2f} MB)")
     
     return True
 
@@ -222,17 +225,17 @@ def main():
     total = len(results)
     
     for check_name, passed_check in results.items():
-        status = "✅ PASS" if passed_check else "❌ FAIL"
-        print(f"{status:8} - {check_name}")
+        status = "PASS" if passed_check else "FAIL"
+        print(f"[{status:4}] - {check_name}")
     
     print("\n" + "="*60)
     
     if passed == total:
-        print(f"✅ ALL CHECKS PASSED ({passed}/{total})")
+        print(f"[PASS] ALL CHECKS PASSED ({passed}/{total})")
         print("   The project is ready for deployment")
         return 0
     else:
-        print(f"⚠️  SOME CHECKS FAILED ({total - passed} issues found)")
+        print(f"[FAIL] SOME CHECKS FAILED ({total - passed} issues found)")
         return 1
 
 

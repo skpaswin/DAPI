@@ -21,8 +21,12 @@
         <span class="step-num">3</span>
         <span class="step-label">Academic</span>
       </div>
-      <div id="step-4-indicator" class="step-link clickable-step" data-step="4" style="flex: 1; padding: 20px; text-align: center; cursor: pointer;">
+      <div id="step-4-indicator" class="step-link clickable-step" data-step="4" style="flex: 1; padding: 20px; text-align: center; border-right: 1px solid var(--border); cursor: pointer;">
         <span class="step-num">4</span>
+        <span class="step-label">Professional</span>
+      </div>
+      <div id="step-5-indicator" class="step-link clickable-step" data-step="5" style="flex: 1; padding: 20px; text-align: center; cursor: pointer;">
+        <span class="step-num">5</span>
         <span class="step-label">Skills</span>
       </div>
     </div>
@@ -177,7 +181,25 @@
         <hr style="border-color: var(--border); margin: 24px 0;">
         <div class="row">
           <div class="field"><label>Current Semester Start</label><input type="date" name="semester_start" value="2026-01-01" required></div>
+          <div class="field"><label>Number of Days Present</label><input type="number" name="present_days" value="0" required></div>
           <div class="field"><label>Initial Arrear Count</label><input type="number" name="arrear_count" value="0" required></div>
+        </div>
+        <h4 style="margin-top: 16px; margin-bottom: 12px; font-size: 0.9rem; color: var(--muted); text-transform: uppercase;">SGPA (Semesters 1-8)</h4>
+        <div class="row">
+          <div class="field"><label>Sem 1</label><input type="number" step="0.01" name="sem1" value="0"></div>
+          <div class="field"><label>Sem 2</label><input type="number" step="0.01" name="sem2" value="0"></div>
+          <div class="field"><label>Sem 3</label><input type="number" step="0.01" name="sem3" value="0"></div>
+          <div class="field"><label>Sem 4</label><input type="number" step="0.01" name="sem4" value="0"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Sem 5</label><input type="number" step="0.01" name="sem5" value="0"></div>
+          <div class="field"><label>Sem 6</label><input type="number" step="0.01" name="sem6" value="0"></div>
+          <div class="field"><label>Sem 7</label><input type="number" step="0.01" name="sem7" value="0"></div>
+          <div class="field"><label>Sem 8</label><input type="number" step="0.01" name="sem8" value="0"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Assignments Score (out of 100)</label><input type="number" step="0.01" name="assignments_score" value="0" required></div>
+          <div class="field"><label>Participation Score (out of 100)</label><input type="number" step="0.01" name="participation_score" value="0" required></div>
         </div>
         <div class="field">
           <label>Scholar Type</label>
@@ -194,14 +216,49 @@
         <div style="display: flex; justify-content: space-between; margin-top: 32px;">
           <button type="button" class="btn prev-step" data-prev="2">Back</button>
           <button type="button" class="btn btn-primary next-step" data-next="4">
+            <span>Professional Profiles</span>
+            <i data-lucide="arrow-right" size="18"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 4: PROFESSIONAL PROFILES -->
+      <div class="registration-step" id="step-4" style="display: none;">
+        <h3 style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+          <i data-lucide="link" style="color: var(--primary)"></i>
+          Professional & Coding Profiles
+        </h3>
+        <p class="sub" style="margin-bottom: 24px;">Add your profile links to enhance your Placement Score. (Optional)</p>
+        
+        <div class="field">
+          <label>LeetCode Username or Profile URL</label>
+          <input name="leetcode_url" placeholder="https://leetcode.com/u/username/">
+          <p class="sub" style="font-size: 0.8rem; margin-top: 4px;">Points based on problems solved.</p>
+        </div>
+        
+        <div class="field">
+          <label>GitHub Profile URL</label>
+          <input name="github_url" placeholder="https://github.com/username">
+          <p class="sub" style="font-size: 0.8rem; margin-top: 4px;">Points based on public repositories.</p>
+        </div>
+        
+        <div class="field">
+          <label>LinkedIn Profile URL</label>
+          <input name="linkedin_url" placeholder="https://linkedin.com/in/username">
+          <p class="sub" style="font-size: 0.8rem; margin-top: 4px;">Verified presence points.</p>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 32px;">
+          <button type="button" class="btn prev-step" data-prev="3">Back</button>
+          <button type="button" class="btn btn-primary next-step" data-next="5">
             <span>Finalize Skills</span>
             <i data-lucide="arrow-right" size="18"></i>
           </button>
         </div>
       </div>
 
-      <!-- STEP 4: SKILLS & SUBMIT -->
-      <div class="registration-step" id="step-4" style="display: none;">
+      <!-- STEP 5: SKILLS & SUBMIT -->
+      <div class="registration-step" id="step-5" style="display: none;">
         <h3 style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
           <i data-lucide="zap" style="color: var(--primary)"></i>
           Initial Skill Matrix
@@ -223,7 +280,7 @@
         </button>
 
         <div style="display: flex; justify-content: space-between; margin-top: 32px; gap: 16px;">
-          <button type="button" class="btn prev-step" data-prev="3">Back</button>
+          <button type="button" class="btn prev-step" data-prev="4">Back</button>
           <button type="submit" class="btn btn-teal" style="flex: 1;">
             <i data-lucide="check-circle" size="18"></i>
             <span>Complete Registration</span>

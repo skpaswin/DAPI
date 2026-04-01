@@ -1,38 +1,61 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card" style="max-width:780px; margin:auto;">
-  <h2>Login</h2>
-  <p class="sub">Use your role email and password.</p>
+<div class="fade-in" style="display: flex; justify-content: center; align-items: center; min-height: 70vh;">
+  <div class="card" style="width: 100%; max-width: 480px;">
+    <div style="text-align: center; margin-bottom: 32px;">
+      <div style="display: inline-flex; padding: 16px; background: rgba(99, 102, 241, 0.1); border-radius: 20px; margin-bottom: 16px;">
+        <i data-lucide="shield-check" size="32" style="color: var(--primary)"></i>
+      </div>
+      <h2>Secure Access</h2>
+      <p class="sub">Enter your credentials to access your DAPI portal</p>
+    </div>
 
-  <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
-    <a class="btn" href="/register/student">Student Register</a>
-    <a class="btn" href="/register/staff">Staff Register</a>
-  </div>
-
-  <form method="post">
-    <div class="row">
+    <form method="post">
       <div class="field">
-        <label>Role</label>
+        <label>System Role</label>
         <select name="role" required>
-          <option value="">Select</option>
-          <option value="student">Student</option>
-          <option value="staff">Staff</option>
+          <option value="">Select your role</option>
+          <option value="student">Student Portal</option>
+          <option value="staff">Staff Dashboard</option>
         </select>
       </div>
+
       <div class="field">
-        <label>Email</label>
-        <input name="email" placeholder='"name".student@gmail.com / "name".staff@gmail.com' required>
+        <label>Institutional Email</label>
+        <div style="position: relative;">
+          <input name="email" type="email" placeholder="name.role@gmail.com" required>
+          <i data-lucide="mail" size="18" style="position: absolute; right: 12px; top: 14px; color: var(--muted)"></i>
+        </div>
       </div>
+
+      <div class="field">
+        <label>Password</label>
+        <div style="position: relative;">
+          <input type="password" name="password" placeholder="••••••••" required>
+          <i data-lucide="lock" size="18" style="position: absolute; right: 12px; top: 14px; color: var(--muted)"></i>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" type="submit" style="width: 100%; margin-top: 12px;">
+        <span>Sign In</span>
+        <i data-lucide="arrow-right" size="18"></i>
+      </button>
+
+      {% if error %}
+        <div class="toast error">
+          <i data-lucide="alert-circle" size="18"></i>
+          <span>{{ error }}</span>
+        </div>
+      {% endif %}
+    </form>
+
+    <div class="hr"></div>
+
+    <div style="text-align: center;">
+      <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 0;">Institutional access only. Contact your administrator to receive an account.</p>
+
     </div>
-
-    <div class="field">
-      <label>Password</label>
-      <input type="password" name="password" required>
-    </div>
-
-    <button class="btn btn-primary" type="submit">Login</button>
-
-    {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
-  </form>
+  </div>
 </div>
 {% endblock %}
+

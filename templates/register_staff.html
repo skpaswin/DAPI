@@ -1,23 +1,51 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card" style="max-width:780px; margin:auto;">
-  <h2>Staff Register</h2>
-  <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
-  <a class="btn btn-danger" href="/logout">Logout</a>
-  <a class="btn" href="/">Back to Login</a>
-</div>
-
-  <p class="sub">Email must end with <b>.staff@gmail.com</b></p>
-
-  <form method="post">
-    <div class="row">
-      <div class="field"><label>Email</label><input name="email" placeholder='"name".staff@gmail.com' required></div>
-      <div class="field"><label>Password</label><input type="password" name="password" required></div>
+<div class="fade-in" style="display: flex; justify-content: center; align-items: center; min-height: 70vh;">
+  <div class="card" style="width: 100%; max-width: 480px;">
+    <div style="text-align: center; margin-bottom: 32px;">
+      <div style="display: inline-flex; padding: 16px; background: rgba(20, 184, 166, 0.1); border-radius: 20px; margin-bottom: 16px;">
+        <i data-lucide="shield-check" size="32" style="color: var(--accent)"></i>
+      </div>
+      <h2>Staff Enrollment</h2>
+      <p class="sub">Create your institutional administrator account.</p>
     </div>
-    <button class="btn btn-teal" type="submit">Create Staff Account</button>
 
-    {% if message %}<div class="toast ok">{{ message }}</div>{% endif %}
-    {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
-  </form>
+    <form method="post">
+      <div class="field">
+        <label>Institutional Email</label>
+        <div style="position: relative;">
+          <input name="email" type="email" placeholder="name.staff@gmail.com" required>
+          <i data-lucide="mail" size="18" style="position: absolute; right: 12px; top: 14px; color: var(--muted)"></i>
+        </div>
+        <p class="sub" style="font-size: 0.8rem; margin-top: 8px;">Must end with <b>.staff@gmail.com</b></p>
+      </div>
+
+      <div class="field">
+        <label>Secure Password</label>
+        <div style="position: relative;">
+          <input type="password" name="password" placeholder="••••••••" required>
+          <i data-lucide="lock" size="18" style="position: absolute; right: 12px; top: 14px; color: var(--muted)"></i>
+        </div>
+      </div>
+
+      <button class="btn btn-teal" type="submit" style="width: 100%; margin-top: 12px;">
+        <span>Create Staff Account</span>
+        <i data-lucide="user-plus" size="18"></i>
+      </button>
+
+      {% if message %}<div class="toast ok">{{ message }}</div>{% endif %}
+      {% if error %}<div class="toast error">{{ error }}</div>{% endif %}
+    </form>
+
+    <div class="hr"></div>
+
+    <div style="text-align: center;">
+      <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 16px;">Already have an account?</p>
+      <a class="btn" href="/login" style="width: 100%;">
+        <i data-lucide="log-in" size="16"></i>
+        <span>Sign In Instead</span>
+      </a>
+    </div>
+  </div>
 </div>
 {% endblock %}

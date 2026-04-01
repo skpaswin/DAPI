@@ -15,14 +15,14 @@
         <h1 style="font-size: 2.25rem; font-weight: 800; letter-spacing: -0.02em; margin: 0;">{{ student['name'] }}</h1>
         <span class="badge" style="background: rgba(99, 102, 241, 0.1); color: var(--primary); border-color: rgba(99, 102, 241, 0.2);">{{ student['roll'] }}</span>
       </div>
-      <p class="sub" style="margin: 0;">Institutional Management Portal | Last synchronized today | DEBUG_RELOAD_TEST_1</p>
+      <p class="sub" style="margin: 0;">Institutional Management Portal | Last synchronized today</p>
     </div>
     <div style="display: flex; gap: 12px;">
       <div class="card" style="padding: 12px 24px; display: flex; align-items: center; gap: 12px; background: rgba(20, 184, 166, 0.05); border-color: rgba(20, 184, 166, 0.1);">
         <i data-lucide="activity" size="18" style="color: var(--accent)"></i>
         <div>
           <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">DAPI Score</div>
-          <div style="font-size: 1.25rem; font-weight: 800; color: white;">{{ student['placement_score'] }}</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: var(--text);">{{ student['placement_score'] }}</div>
         </div>
       </div>
     </div>
@@ -40,7 +40,7 @@
           <i data-lucide="zap" size="18"></i>
           <span>Skills Inventory</span>
         </a>
-        <a href="?tab=achievements" class="btn tab-link {% if tab=='achievements' %}active{% endif %}">
+        <a href="?tab=awards" class="btn tab-link {% if tab=='awards' %}active{% endif %}">
           <i data-lucide="award" size="18"></i>
           <span>Awards & Honors</span>
         </a>
@@ -55,6 +55,21 @@
           
           {% if message %}<div class="toast ok"><i data-lucide="check-circle" size="18"></i>{{ message }}</div>{% endif %}
           {% if error %}<div class="toast error"><i data-lucide="alert-circle" size="18"></i>{{ error }}</div>{% endif %}
+          
+          {% if ai_message %}
+          <div class="card" style="margin-bottom: 32px; background: linear-gradient(135deg, rgba(20, 184, 166, 0.15), rgba(99, 102, 241, 0.05)); border: 2px solid var(--accent); padding: 24px; position: relative; overflow: hidden;">
+            <div style="position: absolute; right: -10px; top: -10px; opacity: 0.1;">
+              <i data-lucide="sparkles" size="80"></i>
+            </div>
+            <h4 style="color: var(--accent); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">
+              <i data-lucide="sparkles" size="18"></i>
+              AI Advisor Insights (Student View)
+            </h4>
+            <p style="font-size: 1rem; line-height: 1.6; color: var(--text); margin-bottom: 0; font-weight: 500; position: relative; z-index: 1;">
+              {{ ai_message }}
+            </p>
+          </div>
+          {% endif %}
           
           <form method="post">
             <input type="hidden" name="form_type" value="edit">
@@ -143,6 +158,10 @@
                   <div class="field"><label>Present Days</label><input name="present_days" type="number" value="{{ student['present_days'] }}"></div>
                   <div class="field"><label>Arrear Count</label><input name="arrear_count" type="number" value="{{ student['arrear_count'] }}"></div>
                 </div>
+                <div class="row">
+                  <div class="field"><label>Assignments Score</label><input name="assignments_score" type="number" step="0.01" value="{{ student['assignments_score'] }}"></div>
+                  <div class="field"><label>Participation Score</label><input name="participation_score" type="number" step="0.01" value="{{ student['participation_score'] }}"></div>
+                </div>
                 <div class="field"><label>DOB (Institutional)</label><input name="dob" type="date" value="{{ student['dob'] }}"></div>
               </div>
             </div>
@@ -205,7 +224,73 @@
             </table>
           </div>
 
-        {% elif tab == "achievements" %}
+        {% elif tab == "awards" %}
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+            <div>
+              <h3 style="margin: 0">Awards & Honors Oversight</h3>
+              <p class="sub" style="margin: 0">Audit student achievements and add institutional recognitions.</p>
+            </div>
+            <button class="btn btn-primary" onclick="document.getElementById('admin-ach-form').style.display='block'; this.style.display='none'">
+              <i data-lucide="trophy" size="18"></i>
+              <span>Add Achievement</span>
+            </button>
+          </div>
+
+          <!-- Administrative Achievement Add -->
+          <div id="admin-ach-form" style="display: none; margin-bottom: 32px;" class="fade-in">
+            <div class="card" style="border-color: #f59e0b; background: rgba(245, 158, 11, 0.02);">
+              <h4 style="color: #f59e0b; margin-bottom: 16px;">New Achievement</h4>
+              <form method="post">
+                <input type="hidden" name="form_type" value="achievement_add">
+                <div class="row">
+                  <div class="field"><label>Achievement Title</label><input name="title" placeholder="e.g. Dean's List" required></div>
+                  <div class="field"><label>Level</label><input name="level" placeholder="e.g. Institutional"></div>
+                  <div class="field"><label>Date (YYYY-MM-DD)</label><input name="date_str" type="date"></div>
+                </div>
+                <div style="display: flex; gap: 12px; margin-top: 16px;">
+                  <button type="submit" class="btn btn-primary">Save Achievement</button>
+                  <button type="button" class="btn" onclick="location.reload()">Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div class="table-container" style="margin-bottom: 48px;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Achievement</th>
+                  <th>Level</th>
+                  <th>Date</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for a in achievements %}
+                <tr>
+                  <td style="font-weight: 600;">{{ a['title'] }}</td>
+                  <td><span class="badge" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">{{ a['level'] }}</span></td>
+                  <td>{{ a['date_str'] or '-' }}</td>
+                  <td style="text-align: right;">
+                    <form method="post" style="display:inline">
+                      <input type="hidden" name="form_type" value="achievement_delete">
+                      <input type="hidden" name="id" value="{{ a['id'] }}">
+                      <button class="btn btn-danger" style="padding: 6px 10px;" title="Delete">
+                        <i data-lucide="trash-2" size="14"></i>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+                {% if not achievements %}
+                <tr><td colspan="4" style="text-align: center; color: var(--muted); padding: 24px;">No achievements recorded.</td></tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="hr" style="margin: 40px 0;"></div>
+
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
             <div>
               <h3 style="margin: 0">Credential Verification</h3>
@@ -220,6 +305,7 @@
           <!-- Administrative Certificate Upload -->
           <div id="admin-cert-form" style="display: none; margin-bottom: 32px;" class="fade-in">
             <div class="card" style="border-color: var(--primary); background: rgba(99, 102, 241, 0.02);">
+              <h4 style="color: var(--primary); margin-bottom: 16px;">New Certificate</h4>
               <form method="post" enctype="multipart/form-data">
                 <input type="hidden" name="form_type" value="cert_add">
                 <div class="row">
@@ -279,9 +365,6 @@
                           class="btn" title="View Document" style="padding: 6px 10px; background: rgba(99, 102, 241, 0.1); color: var(--primary);">
                           <i data-lucide="eye" size="14"></i>
                         </button>
-                        <a href="{{ url_for('static', filename=c['file_path']) }}" target="_blank" class="btn" title="Open Full Screen" style="padding: 6px 10px; background: rgba(255,255,255,0.05); color: var(--muted);">
-                          <i data-lucide="external-link" size="14"></i>
-                        </a>
                       {% endif %}
                       
                       {% if c['status'] == 'Pending' %}
@@ -302,10 +385,20 @@
                           </button>
                         </form>
                       {% endif %}
+                      <form method="post" style="display:inline">
+                        <input type="hidden" name="form_type" value="cert_delete">
+                        <input type="hidden" name="id" value="{{ c['id'] }}">
+                        <button class="btn btn-danger" style="padding: 6px 10px;" title="Delete Certificate">
+                          <i data-lucide="trash-2" size="14"></i>
+                        </button>
+                      </form>
                     </div>
                   </td>
                 </tr>
                 {% endfor %}
+                {% if not certs %}
+                <tr><td colspan="4" style="text-align: center; color: var(--muted); padding: 24px;">No certifications uploaded.</td></tr>
+                {% endif %}
               </tbody>
             </table>
           </div>
@@ -335,20 +428,20 @@
         <h3 style="font-size: 1.1rem; margin-bottom: 20px; color: var(--muted); text-transform: uppercase;">Score Breakdown</h3>
         <div style="display: flex; flex-direction: column; gap: 12px;">
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.01); border-radius: 8px;">
-            <span style="font-size: 0.85rem; color: var(--muted);">CGPA (50m)</span>
-            <span style="font-weight: 700; color: var(--primary);">+{{ breakdown['cgpa_points'] }}</span>
+            <span style="font-size: 0.85rem; color: var(--muted);">Exams (40m)</span>
+            <span style="font-weight: 700; color: var(--primary);">+{{ breakdown['exam_points'] }}</span>
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.01); border-radius: 8px;">
-            <span style="font-size: 0.85rem; color: var(--muted);">Skills (30m)</span>
-            <span style="font-weight: 700; color: var(--accent);">+{{ breakdown['skill_points'] }}</span>
+            <span style="font-size: 0.85rem; color: var(--muted);">Assignments (30m)</span>
+            <span style="font-weight: 700; color: var(--accent);">+{{ breakdown['assignment_points'] }}</span>
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.01); border-radius: 8px;">
-            <span style="font-size: 0.85rem; color: var(--muted);">Achievements (10m)</span>
-            <span style="font-weight: 700; color: #f59e0b;">+{{ breakdown['ach_points'] }}</span>
+            <span style="font-size: 0.85rem; color: var(--muted);">Attendance (20m)</span>
+            <span style="font-weight: 700; color: #f59e0b;">+{{ breakdown['attendance_points'] }}</span>
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.01); border-radius: 8px;">
-            <span style="font-size: 0.85rem; color: var(--muted);">Certifications (10m)</span>
-            <span style="font-weight: 700; color: #10b981;">+{{ breakdown['cert_points'] }}</span>
+            <span style="font-size: 0.85rem; color: var(--muted);">Participation (10m)</span>
+            <span style="font-weight: 700; color: #10b981;">+{{ breakdown['participation_points'] }}</span>
           </div>
           {% if breakdown['penalty'] > 0 %}
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(239, 68, 68, 0.05); border-radius: 8px;">

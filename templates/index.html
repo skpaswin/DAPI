@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="fade-in">
+  <!-- Hero Section -->
+  <section style="padding: 80px 0; text-align: center; background: radial-gradient(circle at top, rgba(99, 102, 241, 0.15) 0%, transparent 70%);">
+    <div class="badge" style="margin-bottom: 24px; padding: 8px 16px; font-weight: 600; font-size: 0.9rem;">
+      <i data-lucide="sparkles" size="14" style="color: var(--primary)"></i>
+      <span>The Future of Academic Management is Here</span>
+    </div>
+    
+    <h1 style="font-size: 4.5rem; font-weight: 900; line-height: 1.1; letter-spacing: -0.04em; margin-bottom: 24px;">
+      Empower Your <span style="background: linear-gradient(90deg, var(--primary), var(--accent)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Academic Journey</span>
+    </h1>
+    
+    <p class="sub" style="font-size: 1.25rem; max-width: 700px; margin: 0 auto 40px; line-height: 1.6;">
+      DAPI is an institutional operating system that bridges the gap between student achievement and professional placement through data-driven insights.
+    </p>
+
+    <div style="display: flex; gap: 16px; justify-content: center;">
+      <a href="/login" class="btn btn-primary" style="padding: 16px 32px; font-size: 1.1rem;">
+        <span>Launch Portal</span>
+        <i data-lucide="arrow-right" size="20"></i>
+      </a>
+      <a href="/register/student" class="btn" style="padding: 16px 32px; font-size: 1.1rem; border: 1px solid var(--border);">
+        <i data-lucide="user-plus" size="20"></i>
+        <span>Join as Student</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- About DAPI Section -->
+  <section style="padding: 80px 0; background: rgba(99, 102, 241, 0.03); border-radius: 32px; border: 1px dashed rgba(99, 102, 241, 0.2); margin: 40px 0;">
+    <div style="max-width: 900px; margin: 0 auto; padding: 0 24px;">
+      <div style="text-align: center; margin-bottom: 40px;">
+        <h2 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 16px;">What is DAPI?</h2>
+        <p class="sub" style="font-size: 1.1rem; line-height: 1.6; max-width: 700px; margin: 0 auto;">
+          The Digital Academic Progress Index (DAPI) is a system used by educational institutions to track, measure, and analyze students’ academic progress using digital tools and data. It’s like a scorecard + analytics system that continuously monitors how a student is performing over time.
+        </p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px; margin-bottom: 40px;">
+        <div class="card" style="padding: 32px;">
+          <h3 style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+            <i data-lucide="key" size="24" style="color: var(--primary)"></i> Key Features
+          </h3>
+          <ul style="list-style-type: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; color: var(--muted);">
+            <li><strong style="color: var(--text)">Performance Tracking:</strong> Records marks, grades, attendance, and assignments.</li>
+            <li><strong style="color: var(--text)">Continuous Assessment:</strong> Not just final exams — includes quizzes, projects, and internal assessments.</li>
+            <li><strong style="color: var(--text)">Data Analytics:</strong> Identifies strengths 📈, weak areas 📉, and learning trends over time.</li>
+            <li><strong style="color: var(--text)">Progress Index Score:</strong> A calculated value representing overall academic performance.</li>
+          </ul>
+        </div>
+        
+        <div class="card" style="padding: 32px;">
+          <h3 style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+            <i data-lucide="book-open" size="24" style="color: var(--accent)"></i> Why It’s Used
+          </h3>
+          <ul style="list-style-type: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; color: var(--muted);">
+            <li style="display: flex; gap: 12px; align-items: flex-start;"><i data-lucide="check-circle-2" size="20" style="color: var(--accent); flex-shrink: 0; margin-top: 2px;"></i> Helps teachers monitor student improvement</li>
+            <li style="display: flex; gap: 12px; align-items: flex-start;"><i data-lucide="check-circle-2" size="20" style="color: var(--accent); flex-shrink: 0; margin-top: 2px;"></i> Helps students understand their performance</li>
+            <li style="display: flex; gap: 12px; align-items: flex-start;"><i data-lucide="check-circle-2" size="20" style="color: var(--accent); flex-shrink: 0; margin-top: 2px;"></i> Supports personalized learning</li>
+            <li style="display: flex; gap: 12px; align-items: flex-start;"><i data-lucide="check-circle-2" size="20" style="color: var(--accent); flex-shrink: 0; margin-top: 2px;"></i> Useful for reports, rankings, and academic decisions</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), transparent); border: 1px solid rgba(99, 102, 241, 0.2); padding: 32px; text-align: center;">
+        <h4 style="margin-bottom: 16px; display: inline-flex; align-items: center; gap: 8px; font-size: 1.25rem;">
+          <i data-lucide="brain-circuit" size="24" style="color: var(--primary)"></i> Example Calculation
+        </h4>
+        <p class="sub" style="margin-bottom: 24px; max-width: 600px; margin-left: auto; margin-right: auto;">A DAPI system might combine different assessment areas to generate a single index score:</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; justify-content: center;">
+          <span class="badge" style="background: rgba(99, 102, 241, 0.1); color: var(--primary); font-size: 1rem; padding: 12px 20px;">40% Exams</span>
+          <span class="badge" style="background: rgba(20, 184, 166, 0.1); color: var(--accent); font-size: 1rem; padding: 12px 20px;">30% Assignments</span>
+          <span class="badge" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; font-size: 1rem; padding: 12px 20px;">20% Attendance</span>
+          <span class="badge" style="background: rgba(244, 63, 94, 0.1); color: var(--danger); font-size: 1rem; padding: 12px 20px;">10% Participation</span>
+        </div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--text); display: flex; align-items: center; justify-content: center; gap: 16px;">
+          <i data-lucide="arrow-right" size="32" style="color: var(--muted)"></i>
+          DAPI Score = <span style="background: linear-gradient(90deg, var(--primary), var(--accent)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">78/100</span>
+        </div>
+      </div>
+      
+      <div style="margin-top: 24px; text-align: center; color: var(--muted); font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <i data-lucide="alert-triangle" size="16" style="color: #f59e0b;"></i>
+        <span>“Digital Academic Progress Index” is not a universal standard term like GPA — it is often a custom institutional system.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Grid -->
+  <section style="padding: 80px 0;">
+    <div style="text-align: center; margin-bottom: 60px;">
+      <h2 style="font-size: 2.25rem; font-weight: 800; margin-bottom: 12px;">Engineered for Excellence</h2>
+      <p class="sub">Advanced features designed for modern educational institutions.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px;">
+      <div class="card" style="padding: 40px; border: 1px solid rgba(99, 102, 241, 0.1);">
+        <div style="width: 48px; height: 48px; background: rgba(99, 102, 241, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+          <i data-lucide="bar-chart-4" size="24" style="color: var(--primary)"></i>
+        </div>
+        <h3 style="margin-bottom: 16px;">Real-time Metrics</h3>
+        <p class="sub" style="font-size: 1rem;">Instant visualization of attendance, SGPA, and holistic placement potential through our proprietary DAPI Index.</p>
+      </div>
+
+      <div class="card" style="padding: 40px; border: 1px solid rgba(20, 184, 166, 0.1);">
+        <div style="width: 48px; height: 48px; background: rgba(20, 184, 166, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+          <i data-lucide="shield-check" size="24" style="color: var(--accent)"></i>
+        </div>
+        <h3 style="margin-bottom: 16px;">Verified Portfolio</h3>
+        <p class="sub" style="font-size: 1rem;">Institution-verified skill sets, certifications, and achievements, ready for placement office review.</p>
+      </div>
+
+      <div class="card" style="padding: 40px; border: 1px solid rgba(244, 63, 94, 0.1);">
+        <div style="width: 48px; height: 48px; background: rgba(244, 63, 94, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+          <i data-lucide="users" size="24" style="color: var(--danger)"></i>
+        </div>
+        <h3 style="margin-bottom: 16px;">Staff Oversight</h3>
+        <p class="sub" style="font-size: 1rem;">Transparent student-staff communication with centralized record management and mentor assignments.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Statistics Banner -->
+  <section style="margin: 40px 0; padding: 60px; background: var(--glass); border-radius: 32px; border: 1px solid var(--border); display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; text-align: center;">
+    <div>
+      <div style="font-size: 3rem; font-weight: 900; color: white;">10k+</div>
+      <p class="sub" style="text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; font-weight: 700;">Active Students</p>
+    </div>
+    <div>
+      <div style="font-size: 3rem; font-weight: 900; color: var(--primary);">98%</div>
+      <p class="sub" style="text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; font-weight: 700;">Data Accuracy</p>
+    </div>
+    <div>
+      <div style="font-size: 3rem; font-weight: 900; color: var(--accent);">500+</div>
+      <p class="sub" style="text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; font-weight: 700;">Placement Partners</p>
+    </div>
+  </section>
+
+  <!-- Footer CTA -->
+  <section style="padding: 100px 0; text-align: center;">
+    <h2 style="font-size: 3rem; font-weight: 900; margin-bottom: 24px;">Ready to elevate your institution?</h2>
+    <p class="sub" style="max-width: 600px; margin: 0 auto 40px;">Join the thousands of students already using DAPI to secure their professional future.</p>
+    <a href="/register/staff" class="btn btn-teal" style="padding: 20px 40px; font-size: 1.25rem;">
+      <i data-lucide="building" size="24"></i>
+      <span>Onboard Your Department</span>
+    </a>
+  </section>
+</div>
+{% endblock %}

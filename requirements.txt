@@ -2,3 +2,6 @@ Flask
 Werkzeug
 waitress
 gunicorn
+requests
+jinja2
+google-generativeai

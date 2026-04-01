@@ -1,35 +1,100 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card">
-  <h2>Staff Dashboard</h2>
-  <p class="sub">Students grouped by department. Click View to open tabs.</p>
-
-  <form method="post">
-    <div class="row">
-      <div class="field"><label>Search</label><input name="query" value="{{ query }}" placeholder="Roll / Name / Dept / Email"></div>
-      <div class="field" style="display:flex; align-items:end;"><button class="btn btn-primary" type="submit">Search</button></div>
+<div class="fade-in">
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; gap: 20px; flex-wrap: wrap;">
+    <div>
+      <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 4px;">Institutional Directory</h1>
+      <p class="sub" style="margin-bottom: 0;">Comprehensive student management and academic tracking.</p>
     </div>
-  </form>
+    <div style="display: flex; gap: 12px;">
+      <a href="/register/student" class="btn btn-primary" style="padding: 10px 20px;">
+        <i data-lucide="user-plus" size="18"></i>
+        <span>Add New Student</span>
+      </a>
+    </div>
+  </div>
 
-  <div class="hr"></div>
+  <div class="card" style="margin-bottom: 32px; padding: 24px;">
+    <form method="post" style="display: flex; gap: 16px; align-items: center;">
+      <div style="position: relative; flex: 1;">
+        <i data-lucide="search" size="18" style="position: absolute; left: 16px; top: 14px; color: var(--muted)"></i>
+        <input name="query" value="{{ query or '' }}" placeholder="Search by name, roll number, or department..." style="padding-left: 48px;">
+      </div>
+      <button class="btn btn-primary" type="submit">
+        <i data-lucide="filter" size="18"></i>
+        <span>Filter Results</span>
+      </button>
+      {% if query %}
+        <a href="/staff" class="btn">
+          <i data-lucide="refresh-cw" size="18"></i>
+          <span>Reset</span>
+        </a>
+      {% endif %}
+    </form>
+  </div>
 
-  {% for dept, students in dept_map.items() %}
-    <h3>{{ dept }}</h3>
-    <table class="table">
-      <thead><tr><th>Roll</th><th>Name</th><th>Email</th><th>Score</th><th>Action</th></tr></thead>
-      <tbody>
-        {% for s in students %}
-        <tr>
-          <td>{{ s.roll }}</td>
-          <td>{{ s.name }}</td>
-          <td>{{ s.user_email }}</td>
-          <td>{{ s.placement_score }}</td>
-          <td><a class="btn btn-teal" href="/staff/student/{{ s.id }}?tab=profile">View</a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    <div class="hr"></div>
-  {% endfor %}
+  {% if dept_map %}
+    {% for dept, students in dept_map.items() %}
+      <div style="margin-bottom: 48px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+          <div style="width: 40px; height: 40px; background: rgba(99, 102, 241, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="building-2" size="20" style="color: var(--primary)"></i>
+          </div>
+          <h2 style="margin: 0; font-size: 1.5rem;">{{ dept }}</h2>
+          <span class="badge" style="margin-left: 8px;">{{ students|length }} Students</span>
+        </div>
+
+        <div class="mini-list">
+          {% for s in students %}
+            <div class="mini-item">
+              <div class="profile">
+                <div class="avatar">{{ s['name'][0]|upper }}</div>
+                <div>
+                  <div class="value">{{ s['name'] }}</div>
+                  <div class="label" style="margin-top: 2px;">{{ s['user_email'] }}</div>
+                </div>
+              </div>
+
+              <div>
+                <div class="label">Institutional ID</div>
+                <div class="value" style="font-family: monospace; opacity: 0.8;">{{ s['roll'] }}</div>
+              </div>
+
+              <div>
+                <div class="label">Attendance Range</div>
+                <div class="value">
+                  <span style="color: var(--accent);">{{ s['present_days'] or 0 }} Days</span>
+                  <span style="color: var(--primary); font-size: 0.8rem; margin-left: 4px;">({{ s['attendance_pct'] }}%)</span>
+                </div>
+              </div>
+
+              <div>
+                <div class="label">Progress Score</div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <div class="progress-bar" style="width: 100px; height: 6px;">
+                    <div class="progress-fill" style="--p: {{ s['placement_score'] }}%;"></div>
+                  </div>
+                  <span class="value">{{ s['placement_score'] }}</span>
+                </div>
+              </div>
+
+              <div class="actions">
+                <a href="/staff/student/{{ s['id'] }}" class="btn" style="padding: 8px 16px;">
+                  <i data-lucide="external-link" size="14"></i>
+                  <span>Review Profile</span>
+                </a>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="card" style="text-align: center; padding: 64px 24px;">
+      <i data-lucide="user-minus" size="48" style="color: var(--muted); margin-bottom: 16px;"></i>
+      <h3>No Directory Matches</h3>
+      <p class="sub">Adjust your search parameters or check the institutional database connection.</p>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

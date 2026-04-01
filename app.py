@@ -4,6 +4,8 @@ from datetime import date, datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from werkzeug.utils import secure_filename
+import requests, re
+import google.generativeai as genai
 
 # Configure logging for 24/7 operation
 log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
@@ -72,6 +74,7 @@ def init_db():
         twelfth TEXT NOT NULL,
 
         semester_start TEXT NOT NULL DEFAULT '2026-01-01',
+        semester_end TEXT NOT NULL DEFAULT '2026-05-30',
         present_days INTEGER NOT NULL DEFAULT 0,
         arrear_count INTEGER NOT NULL DEFAULT 0,
 
@@ -149,12 +152,22 @@ def init_db():
     conn.commit()
     
     # Migration: Add new columns if they don't exist
-    try:
-        conn.execute("ALTER TABLE students ADD COLUMN hsc_cutoff REAL")
-    except: pass
-    try:
-        conn.execute("ALTER TABLE students ADD COLUMN school_name TEXT")
-    except: pass
+    for col in [
+        ("hsc_cutoff", "REAL"),
+        ("school_name", "TEXT"),
+        ("semester_end", "TEXT DEFAULT '2026-05-30'"),
+        ("leetcode_url", "TEXT"),
+        ("github_url", "TEXT"),
+        ("linkedin_url", "TEXT"),
+        ("leetcode_solved", "INTEGER DEFAULT 0"),
+        ("github_repos", "INTEGER DEFAULT 0"),
+        ("assignments_score", "REAL DEFAULT 0.0"),
+        ("participation_score", "REAL DEFAULT 0.0")
+    ]:
+        try:
+            conn.execute(f"ALTER TABLE students ADD COLUMN {col[0]} {col[1]}")
+        except:
+            pass
     conn.commit()
     
     conn.close()
@@ -234,49 +247,67 @@ def validate_email_role(email: str, role: str) -> bool:
 
 
 def get_score_breakdown(conn, student_email: str, student_row):
-    # CGPA up to 50
-    cg = calc_cgpa(student_row) or 0.0
-    cg_part = (cg / 10.0) * 50.0
-
-    # Skills up to 30 (total levels)
-    skill_total = conn.execute(
-        "SELECT COALESCE(SUM(levels_completed),0) AS s FROM skills WHERE student_email=?",
-        (student_email,)
-    ).fetchone()["s"]
-    skill_part = min(30.0, (skill_total / 100.0) * 30.0)
-
-    # Achievements up to 10
-    ach_count = conn.execute(
-        "SELECT COUNT(*) AS c FROM achievements WHERE student_email=?",
-        (student_email,)
-    ).fetchone()["c"]
-    ach_part = min(10.0, ach_count * 2.5)
-
-    # Certifications up to 10
-    cert_count = conn.execute(
-        "SELECT COUNT(*) AS c FROM certifications WHERE student_email=? AND status='Verified'",
-        (student_email,)
-    ).fetchone()["c"]
-    cert_part = min(10.0, cert_count * 2.0)
-
-    # Arrears penalty
-    arrears = max(0, int(student_row["arrear_count"] or 0))
+    student_row = dict(student_row)
+    
+    # 1. Exams (40% mapped from CGPA)
+    cgpa = calc_cgpa(student_row) or 0.0
+    exam_points = (cgpa / 10.0) * 40.0
+    
+    # 2. Assignments (30% mapped from assignments_score)
+    assign_score = safe_float(student_row.get("assignments_score", 0), 0.0)
+    assignment_points = (assign_score / 100.0) * 30.0
+    
+    # 3. Attendance (20% mapped from attendance percentage)
+    _, _, att_pct = calc_attendance(student_row)
+    attendance_points = (att_pct / 100.0) * 20.0
+    
+    # 4. Participation (10% mapped from participation_score)
+    part_score = safe_float(student_row.get("participation_score", 0), 0.0)
+    participation_points = (part_score / 100.0) * 10.0
+    
+    # Arrears penalty (optional deduction outside the 100% scale)
+    arrears = max(0, int(student_row.get("arrear_count", 0) or 0))
     penalty = min(40.0, arrears * 10.0)
 
-    total = max(0.0, min(100.0, cg_part + skill_part + ach_part + cert_part - penalty))
+    total = max(0.0, min(100.0, exam_points + assignment_points + attendance_points + participation_points - penalty))
     
     return {
-        "cgpa_points": round(cg_part, 2),
-        "skill_points": round(skill_part, 2),
-        "ach_points": round(ach_part, 2),
-        "cert_points": round(cert_part, 2),
-        "penalty": round(penalty, 2),
-        "total": round(total, 2)
+        "exam_points": round(float(exam_points), 2),
+        "assignment_points": round(float(assignment_points), 2),
+        "attendance_points": round(float(attendance_points), 2),
+        "participation_points": round(float(participation_points), 2),
+        "penalty": round(float(penalty), 2),
+        "total": round(float(total), 2)
     }
 
 def calc_placement_score(conn, student_email: str, student_row):
     breakdown = get_score_breakdown(conn, student_email, student_row)
     return breakdown["total"]
+
+def fetch_coding_stats(leetcode_url, github_url):
+    lc_solved = 0
+    gh_repos = 0
+    
+    # Try GitHub API (Public data)
+    if github_url and "github.com/" in github_url:
+        try:
+            username = github_url.split("github.com/")[-1].strip("/")
+            resp = requests.get(f"https://api.github.com/users/{username}", timeout=5)
+            if resp.status_code == 200:
+                gh_repos = resp.json().get("public_repos", 0)
+        except: pass
+        
+    # Try LeetCode (Best effort scraping)
+    if leetcode_url and "leetcode.com/" in leetcode_url:
+        try:
+            username = leetcode_url.split("u/")[-1].strip("/") if "u/" in leetcode_url else leetcode_url.split("leetcode.com/")[-1].strip("/")
+            # Use a public API proxy if direct fails, or just direct
+            resp = requests.get(f"https://leetcode-stats-api.herokuapp.com/{username}", timeout=5)
+            if resp.status_code == 200:
+                lc_solved = resp.json().get("totalSolved", 0)
+        except: pass
+        
+    return lc_solved, gh_repos
 
 
 def refresh_score(conn, student_email: str):
@@ -286,6 +317,98 @@ def refresh_score(conn, student_email: str):
     score = calc_placement_score(conn, student_email, student)
     conn.execute("UPDATE students SET placement_score=? WHERE user_email=?", (score, student_email))
     conn.commit()
+
+
+def generate_ai_feedback(student_row, score_breakdown):
+    """
+    Generates personalized AI feedback based on student metrics.
+    Falls back to rule-based logic if Gemini API key is missing.
+    """
+    api_key = os.environ.get("GEMINI_API_KEY")
+    
+    # Ensure student_row is a dict for .get() support
+    if not isinstance(student_row, dict):
+        try:
+            student_row = dict(student_row)
+        except:
+            pass
+
+    # Extract key metrics
+    cgpa = calc_cgpa(student_row) or 0.0
+    _, _, att_pct = calc_attendance(student_row)
+    arrears = int(student_row.get("arrear_count", 0) or 0)
+    lc_solved = int(student_row.get("leetcode_solved", 0) or 0)
+    gh_repos = int(student_row.get("github_repos", 0) or 0)
+    
+    # Basic context for the prompt
+    context = f"""
+    Student Name: {student_row['name']}
+    CGPA: {cgpa}/10
+    Attendance: {att_pct}%
+    Arrears: {arrears}
+    LeetCode Solved: {lc_solved}
+    GitHub Repos: {gh_repos}
+    Placement Score: {score_breakdown['total']}/100
+    """
+
+    if api_key:
+        try:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            prompt = f"""
+            You are an expert career and academic advisor for a student at a technical university. 
+            Based on the following student metrics, provide a concise (2-3 sentences), encouraging, and highly actionable piece of advice to help them improve their academics and career readiness:
+            {context}
+            Focus on their weakest areas (e.g., if attendance is low, or if they have arrears, or if their coding profile is weak).
+            """
+            response = model.generate_content(prompt)
+            return response.text.strip()
+        except Exception as e:
+            logger.error(f"Gemini API error: {e}")
+            # Fall through to rule-based if API fails
+
+    # Rule-based fallback
+    tips = []
+    if arrears > 0:
+        tips.append(f"Focus on clearing your {arrears} arrears first as they significantly impact your placement eligibility.")
+    if att_pct < 75:
+        tips.append("Your attendance is below the ideal threshold; aim for better consistency in classroom sessions.")
+    if cgpa < 7.0:
+        tips.append("Try to boost your CGPA in the upcoming semester to stay competitive for top-tier companies.")
+    if lc_solved < 50:
+        tips.append("Enhance your problem-solving skills by solving more challenges on LeetCode.")
+    if gh_repos < 3:
+        tips.append("Start building and showcasing more projects on GitHub to strengthen your technical portfolio.")
+        
+    if not tips:
+        return "Excellent work! Keep maintaining your high standards and start exploring niche specializations or internships."
+    
+    return f"Hi {student_row['name']}, some quick advice: " + " ".join(tips[:2])
+
+
+def validate_profile_urls(lc, gh, li):
+    errors = []
+    # LeetCode Validation
+    if lc:
+        lc = lc.strip()
+        if not re.match(r"^https?://(www\.)?leetcode\.com/(u/)?[\w-]+/?$", lc):
+            errors.append("Invalid url please provide your profile link")
+    
+    # GitHub Validation
+    if gh:
+        gh = gh.strip()
+        if not re.match(r"^https?://(www\.)?github\.com/[\w-]+/?$", gh):
+            if "Invalid url please provide your profile link" not in errors:
+                errors.append("Invalid url please provide your profile link")
+            
+    # LinkedIn Validation
+    if li:
+        li = li.strip()
+        if not re.match(r"^https?://(www\.)?linkedin\.com/in/[\w-]+/?$", li):
+            if "Invalid url please provide your profile link" not in errors:
+                errors.append("Invalid url please provide your profile link")
+            
+    return errors
 
 
 def require_role(role):
@@ -383,6 +506,18 @@ def register_student():
         cs_marks = safe_float(request.form.get("cs_marks"), 0.0)
         biology_marks = safe_float(request.form.get("biology_marks"), 0.0)
 
+        third_subject = chemistry_marks
+        if cs_marks > 0:
+            third_subject = cs_marks
+        elif biology_marks > 0:
+            third_subject = biology_marks
+
+        hsc_cutoff_str = request.form.get("hsc_cutoff", "").strip()
+        if not hsc_cutoff_str and (physics_marks > 0 or third_subject > 0 or maths_marks > 0):
+            hsc_cutoff = round(maths_marks + (physics_marks / 2.0) + (third_subject / 2.0), 2)
+        else:
+            hsc_cutoff = safe_float(hsc_cutoff_str, 0.0)
+            
         semester_start = request.form.get("semester_start","").strip()
         present_days = safe_int(request.form.get("present_days"), 0)
         arrears = safe_int(request.form.get("arrear_count"), 0)
@@ -391,9 +526,15 @@ def register_student():
         application_no = request.form.get("application_no","").strip()
         admission_no = request.form.get("admission_no","").strip()
         
-        hsc_cutoff = safe_float(request.form.get("hsc_cutoff"), 0.0)
         school_name = request.form.get("school_name", "").strip()
         custom_dept = request.form.get("custom_department", "").strip()
+        assignments_score = safe_float(request.form.get("assignments_score"), 0.0)
+        participation_score = safe_float(request.form.get("participation_score"), 0.0)
+        
+        # New coding profiles
+        leetcode_url = request.form.get("leetcode_url", "").strip()
+        github_url = request.form.get("github_url", "").strip()
+        linkedin_url = request.form.get("linkedin_url", "").strip()
         
         if department == "OTHER" and custom_dept:
             department = custom_dept
@@ -433,6 +574,8 @@ def register_student():
         cert_issue_dates = request.form.getlist("cert_issue_date[]")
 
         try:
+            lc_solved, gh_repos = fetch_coding_stats(leetcode_url, github_url)
+            
             conn = get_db()
             conn.execute(
                 "INSERT INTO users(email, role, password_hash) VALUES(?, 'student', ?)",
@@ -449,8 +592,9 @@ def register_student():
                  gender, blood_group, dob, aadhar_no, father_name, mother_name, parent_occupation, parent_income,
                  mother_tongue, community, religion, nationality,
                  physics_marks, chemistry_marks, maths_marks, cs_marks, biology_marks,
-                 hsc_cutoff, school_name)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 hsc_cutoff, school_name,
+                 leetcode_url, github_url, linkedin_url, leetcode_solved, github_repos, assignments_score, participation_score)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (login_email, student_id, roll, name, contact_email,
                   phone, parent_phone, address, department, mentor_name,
                   scholar_type, (warden_name if scholar_type=="Hosteller" else ""),
@@ -462,7 +606,8 @@ def register_student():
                   aadhar_no, father_name, mother_name, parent_occupation, parent_income,
                   mother_tongue, community, religion, nationality,
                   physics_marks, chemistry_marks, maths_marks, cs_marks, biology_marks,
-                  hsc_cutoff, school_name))
+                  hsc_cutoff, school_name,
+                  leetcode_url, github_url, linkedin_url, lc_solved, gh_repos, assignments_score, participation_score))
             for idx, title in enumerate(ach_titles):
                 title = (title or "").strip()
                 if not title:
@@ -550,6 +695,8 @@ def student_portal():
         return redirect("/")
 
     tab = (request.args.get("tab") or "profile").strip()
+    if tab in ["achievements", "certifications"]:
+        tab = "awards"
     email = session.get("email")
 
     conn = get_db()
@@ -575,9 +722,12 @@ def student_portal():
 
     if request.method == "POST":
         form_type = request.form.get("form_type","").strip()
+        logger.info(f"POST /student with form_type='{form_type}'")
 
         # PROFILE UPDATE
         if form_type == "profile":
+            logger.info("DEBUG: Profile update block TRIGGERED")
+            error = "TRIGGER_MARKER"  # Force this into the HTML
             name = request.form.get("name","").strip()
             contact_email = request.form.get("contact_email","").strip().lower()
             phone = request.form.get("phone","").strip()
@@ -609,30 +759,51 @@ def student_portal():
             aadhar_no = request.form.get("aadhar_no","").strip()
             p_occ = request.form.get("parent_occupation","").strip()
             p_inc = safe_float(request.form.get("parent_income"), 0.0)
+            
+            # New coding profiles
+            leetcode_url = request.form.get("leetcode_url", "").strip()
+            github_url = request.form.get("github_url", "").strip()
+            linkedin_url = request.form.get("linkedin_url", "").strip()
+            logger.warning(f"URL DEBUG: lc='{leetcode_url}', gh='{github_url}', li='{linkedin_url}'")
 
-            if not all([name, contact_email, phone, parent_phone, address, department, mentor_name]):
+            fields_to_check = [name, contact_email, phone, parent_phone, address, department, mentor_name]
+            if not all(fields_to_check):
+                missing = [k for k, v in zip(["name", "contact_email", "phone", "parent_phone", "address", "department", "mentor_name"], fields_to_check) if not v]
                 error = "Fill all required fields"
+                logger.warning(f"Profile update failed for {email}: Missing fields {missing}")
             else:
-                conn.execute("""
-                    UPDATE students SET
-                      name=?, contact_email=?, phone=?, parent_phone=?, address=?,
-                      department=?, mentor_name=?, scholar_type=?, warden_name=?, room_no=?,
-                      batch=?, enrollment_no=?, register_no=?, dte_umis_reg_no=?, 
-                      application_no=?, admission_no=?, father_name=?, mother_name=?,
-                      gender=?, dob=?, community=?, religion=?, nationality=?,
-                      mother_tongue=?, blood_group=?, aadhar_no=?, parent_occupation=?,
-                      parent_income=?
-                    WHERE user_email=?
-                """, (name, contact_email, phone, parent_phone, address,
-                      department, mentor_name, scholar_type,
-                      (warden_name if scholar_type=="Hosteller" else ""),
-                      (room_no if scholar_type=="Hosteller" else ""),
-                      batch, enroll_no, reg_no, umis_no, app_no, adm_no,
-                      father, mother, gender, dob, community, religion,
-                      nationality, mother_tongue, blood_group, aadhar_no,
-                      p_occ, p_inc, email))
-                conn.commit()
-                message = "Profile updated ✅"
+                url_errors = validate_profile_urls(leetcode_url, github_url, linkedin_url)
+                if url_errors:
+                    error = " | ".join(url_errors)
+                    logger.warning(f"Validation failed for {email}: {error}")
+                else:
+                    lc_solved, gh_repos = fetch_coding_stats(leetcode_url, github_url)
+                    
+                    conn.execute("""
+                        UPDATE students SET
+                          name=?, contact_email=?, phone=?, parent_phone=?, address=?,
+                          department=?, mentor_name=?, scholar_type=?, warden_name=?, room_no=?,
+                          batch=?, enrollment_no=?, register_no=?, dte_umis_reg_no=?, 
+                          application_no=?, admission_no=?, father_name=?, mother_name=?,
+                          gender=?, dob=?, community=?, religion=?, nationality=?,
+                          mother_tongue=?, blood_group=?, aadhar_no=?, parent_occupation=?,
+                          parent_income=?,
+                          leetcode_url=?, github_url=?, linkedin_url=?, 
+                          leetcode_solved=?, github_repos=?
+                        WHERE user_email=?
+                    """, (name, contact_email, phone, parent_phone, address,
+                          department, mentor_name, scholar_type,
+                          (warden_name if scholar_type=="Hosteller" else ""),
+                          (room_no if scholar_type=="Hosteller" else ""),
+                          batch, enroll_no, reg_no, umis_no, app_no, adm_no,
+                          father, mother, gender, dob, community, religion,
+                          nationality, mother_tongue, blood_group, aadhar_no,
+                          p_occ, p_inc,
+                          leetcode_url, github_url, linkedin_url,
+                          lc_solved, gh_repos,
+                          email))
+                    conn.commit()
+                    message = "Profile & Professional Links updated ✅"
 
         # ACADEMICS UPDATE
         elif form_type == "academics":
@@ -647,6 +818,9 @@ def student_portal():
             m_marks = safe_float(request.form.get("maths_marks"), 0.0)
             cs_marks = safe_float(request.form.get("cs_marks"), 0.0)
             b_marks = safe_float(request.form.get("biology_marks"), 0.0)
+            
+            assignments_score = safe_float(request.form.get("assignments_score"), 0.0)
+            participation_score = safe_float(request.form.get("participation_score"), 0.0)
 
             try:
                 parse_ymd(semester_start)
@@ -658,10 +832,12 @@ def student_portal():
                     UPDATE students SET
                       semester_start=?, present_days=?, arrear_count=?,
                       sem1=?, sem2=?, sem3=?, sem4=?, sem5=?, sem6=?, sem7=?, sem8=?,
-                      physics_marks=?, chemistry_marks=?, maths_marks=?, cs_marks=?, biology_marks=?
+                      physics_marks=?, chemistry_marks=?, maths_marks=?, cs_marks=?, biology_marks=?,
+                      assignments_score=?, participation_score=?
                     WHERE user_email=?
                 """, (semester_start, present_days, arrears, *sems, 
-                      p_marks, c_marks, m_marks, cs_marks, b_marks, email))
+                      p_marks, c_marks, m_marks, cs_marks, b_marks,
+                      assignments_score, participation_score, email))
                 conn.commit()
                 refresh_score(conn, email)
                 message = "Academic records calibrated! ✅"
@@ -768,6 +944,21 @@ def student_portal():
     ).fetchall()
 
     breakdown = get_score_breakdown(conn, email, student)
+    
+    # Ensure we use a dict for the AI function
+    student_dict = dict(student) if not isinstance(student, dict) else student
+    
+    try:
+        ai_message = generate_ai_feedback(student_dict, breakdown)
+        if not ai_message:
+            ai_message = "Your academic journey is unique. Stay focused on your goals!"
+    except Exception as e:
+        logger.error(f"AI Feedback failed: {e}")
+        ai_message = "Keep pushing your limits and refine your technical skills every day."
+    
+    # DEFINITIVE DEBUG:
+    print(f"\n[DEBUG] FINAL AI MESSAGE: '{ai_message}'\n")
+    
     conn.close()
 
     return render_template(
@@ -784,7 +975,9 @@ def student_portal():
         sgpas=sgpas,
         skills=skills,
         achievements=achievements,
-        certs=certs
+        certs=certs,
+        breakdown=breakdown,
+        ai_message=ai_message
     )
 
 
@@ -792,14 +985,14 @@ def student_portal():
 def achievements_page():
     if not require_role("student"):
         return redirect("/")
-    return redirect("/student?tab=achievements")
+    return redirect("/student?tab=awards")
 
 
 @app.route("/certifications")
 def certifications_page():
     if not require_role("student"):
         return redirect("/")
-    return redirect("/student?tab=certifications")
+    return redirect("/student?tab=awards")
 
 
 # ---------------- STAFF ----------------
@@ -824,8 +1017,12 @@ def staff_dashboard():
 
     # group by department
     dept_map: dict = {}
-    for s in students:
+    for row in students:
+        s = dict(row)
         dept = s["department"] or "Unknown"
+        _, _, attendance_pct = calc_attendance(s)
+        s["attendance_pct"] = attendance_pct
+        
         if dept not in dept_map:
             dept_map[dept] = []
         dept_map[dept].append(s)
@@ -839,6 +1036,8 @@ def staff_student_portal(sid):
         return redirect("/")
 
     tab = (request.form.get("tab") or request.args.get("tab") or "profile").strip()
+    if tab in ["achievements", "certifications"]:
+        tab = "awards"
 
     conn = get_db()
     student = conn.execute("SELECT * FROM students WHERE id=?", (sid,)).fetchone()
@@ -881,6 +1080,7 @@ def staff_student_portal(sid):
             parent_income = safe_float(request.form.get("parent_income"), 0.0)
 
             semester_start = request.form.get("semester_start","").strip()
+            semester_end = request.form.get("semester_end","").strip()
             present_days = max(0, safe_int(request.form.get("present_days"), 0))
             arrears = max(0, safe_int(request.form.get("arrear_count"), 0))
             sems = [safe_float(request.form.get(f"sem{i}")) for i in range(1,9)]
@@ -890,8 +1090,23 @@ def staff_student_portal(sid):
             m_marks = safe_float(request.form.get("maths_marks"), 0.0)
             cs_marks = safe_float(request.form.get("cs_marks"), 0.0)
             b_marks = safe_float(request.form.get("biology_marks"), 0.0)
-            hsc_cutoff = safe_float(request.form.get("hsc_cutoff"), 0.0)
+            
+            third_sub = c_marks
+            if cs_marks > 0:
+                third_sub = cs_marks
+            elif b_marks > 0:
+                third_sub = b_marks
+
+            hsc_cutoff_str = request.form.get("hsc_cutoff", "").strip()
+            if not hsc_cutoff_str and (p_marks > 0 or third_sub > 0 or m_marks > 0):
+                hsc_cutoff = round(m_marks + (p_marks / 2.0) + (third_sub / 2.0), 2)
+            else:
+                hsc_cutoff = safe_float(hsc_cutoff_str, 0.0)
+                
             school_name = request.form.get("school_name", "").strip()
+
+            assignments_score = safe_float(request.form.get("assignments_score"), 0.0)
+            participation_score = safe_float(request.form.get("participation_score"), 0.0)
 
             department = request.form.get("department", student["department"]).strip().upper()
             mentor_name = request.form.get("mentor_name", student["mentor_name"]).strip()
@@ -922,6 +1137,7 @@ def staff_student_portal(sid):
                       semester_start=?, present_days=?, arrear_count=?,
                       physics_marks=?, chemistry_marks=?, maths_marks=?, cs_marks=?, biology_marks=?,
                       hsc_cutoff=?, school_name=?,
+                      assignments_score=?, participation_score=?,
                       sem1=?, sem2=?, sem3=?, sem4=?, sem5=?, sem6=?, sem7=?, sem8=?
                      WHERE id=?
                 """, (name, contact_email, phone, parent_phone, address,
@@ -935,6 +1151,7 @@ def staff_student_portal(sid):
                       semester_start, present_days, arrears,
                       p_marks, c_marks, m_marks, cs_marks, b_marks,
                       hsc_cutoff, school_name,
+                      assignments_score, participation_score,
                       *sems, sid))
                 conn.commit()
                 refresh_score(conn, student["user_email"])
@@ -1104,6 +1321,12 @@ def staff_student_portal(sid):
                          (student["user_email"],)).fetchall()
 
     breakdown = get_score_breakdown(conn, student["user_email"], student)
+    # AI Feedback for staff oversight
+    s_dict = dict(student) if not isinstance(student, dict) else student
+    try:
+        ai_message = generate_ai_feedback(s_dict, breakdown)
+    except:
+        ai_message = "Consistent academic effort."
     conn.close()
 
     return render_template(
@@ -1121,7 +1344,8 @@ def staff_student_portal(sid):
         sgpas=sgpas,
         skills=skills,
         achievements=achievements,
-        certs=certs
+        certs=certs,
+        ai_message=ai_message
     )
 
 

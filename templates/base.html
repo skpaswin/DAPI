@@ -1,35 +1,96 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>DAPI</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DAPI | Digital Academic Progress Index</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2.0.3">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
+<body class="fade-in">
 
-<div class="nav">
+<nav class="nav">
   <div class="nav-inner">
-    <div class="brand">
-      <span style="font-size:18px">📘 DAPI</span>
-      <span class="badge">Digital Academic Progress Index</span>
-    </div>
+    <a href="/" class="brand">
+      <i data-lucide="book-open" style="color: var(--primary)"></i>
+      <span>DAPI TEST</span>
+      <span class="badge">V2.0.6</span>
+    </a>
 
-    <div style="display:flex; gap:10px; align-items:center;">
-      {% if session.get("role") == "student" %}
-        <a class="btn" href="/student?tab=profile">Portal</a>
-      {% elif session.get("role") == "staff" %}
-        <a class="btn" href="/staff">Students</a>
-      {% endif %}
-      {% if session.get("role") %}
-        <a class="btn btn-danger" href="/logout">Logout</a>
+    <div class="nav-links">
+      <button id="theme-toggle" class="btn btn-primary" title="Toggle Theme" style="padding: 8px 16px; min-width: 120px;">
+        <i id="theme-icon" data-lucide="sun" size="16"></i>
+        <span id="theme-text">Dark Mode</span>
+      </button>
+      <a href="/" class="btn" style="background: transparent;">Home</a>
+      {% if session.get('role') %}
+        <a href="{{ '/student' if session['role'] == 'student' else '/staff' }}" class="btn">Dashboard</a>
+        <a href="/logout" class="btn btn-danger" style="padding: 8px 16px;">
+          <i data-lucide="log-out" size="16"></i>
+          <span>Logout</span>
+        </a>
+      {% else %}
+        <a href="/login" class="btn btn-primary" style="padding: 8px 20px;">
+          <span>Login</span>
+          <i data-lucide="log-in" size="16"></i>
+        </a>
       {% endif %}
     </div>
   </div>
-</div>
+</nav>
 
-<div class="container">
+<main class="container">
   {% block content %}{% endblock %}
-</div>
+</main>
 
+<script>
+  // Theme Management
+  const themeToggle = document.getElementById('theme-toggle');
+  const themeIcon = document.getElementById('theme-icon');
+  const body = document.body;
+
+  function updateTheme(theme) {
+    const isLight = theme === 'light';
+    if (isLight) {
+      body.classList.add('light-theme');
+    } else {
+      body.classList.remove('light-theme');
+    }
+    
+    // Update button content
+    const themeText = document.getElementById('theme-text');
+    themeToggle.innerHTML = `
+      <i data-lucide="${isLight ? 'moon' : 'sun'}" size="16"></i>
+      <span>${isLight ? 'Light Mode' : 'Dark Mode'}</span>
+    `;
+    
+    localStorage.setItem('theme', theme);
+    lucide.createIcons();
+  }
+
+  // Init theme
+  const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  updateTheme(savedTheme);
+
+  themeToggle.addEventListener('click', () => {
+    const isLight = body.classList.contains('light-theme');
+    updateTheme(isLight ? 'dark' : 'light');
+  });
+  
+  // Scroll Reveal Logic
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('section, .card, .grid').forEach(el => {
+    el.classList.add('reveal');
+    observer.observe(el);
+  });
+</script>
 </body>
 </html>
