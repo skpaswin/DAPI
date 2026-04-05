@@ -409,23 +409,31 @@
 
     <!-- Stats Sidebar -->
     <aside class="fade-in" style="display: flex; flex-direction: column; gap: 24px; position: sticky; top: 100px; height: fit-content; min-width: 350px; border-left: 1px solid var(--border); padding-left: 16px;">
-      <div class="card" style="margin-bottom: 24px;">
-        <h3 style="font-size: 1.1rem; margin-bottom: 20px; color: var(--muted); text-transform: uppercase;">Engagement Stats</h3>
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-          <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.02); border-radius: 16px;">
-            <div style="font-size: 2rem; font-weight: 800; color: var(--accent);">{{ attendance_pct }}%</div>
-            <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase;">Attendance Integrity</div>
+      <div class="card" style="margin-bottom: 24px; padding: 20px;">
+        <h3 style="font-size: 1.1rem; margin-bottom: 16px; color: var(--muted); text-transform: uppercase;">SGPA Performance</h3>
+        <canvas id="staffSgpaChart" height="130"></canvas>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
+          <div style="text-align: center; padding: 12px; background: rgba(255,255,255,0.02); border-radius: 12px;">
+            <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent);">{{ attendance_pct }}%</div>
+            <div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase;">Attendance</div>
           </div>
-          <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.02); border-radius: 16px;">
-            <div style="font-size: 2rem; font-weight: 800; color: var(--primary);">{{ cgpa or '0.0' }}</div>
-            <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase;">Academic Index (CGPA)</div>
+          <div style="text-align: center; padding: 12px; background: rgba(255,255,255,0.02); border-radius: 12px;">
+            <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">{{ cgpa or '0.0' }}</div>
+            <div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase;">CGPA</div>
           </div>
         </div>
       </div>
 
       <!-- DAPI Score Breakdown -->
       <div class="card" style="margin-bottom: 24px;">
-        <h3 style="font-size: 1.1rem; margin-bottom: 20px; color: var(--muted); text-transform: uppercase;">Score Breakdown</h3>
+        <h3 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--muted); text-transform: uppercase;">Score Breakdown</h3>
+        <div style="position: relative; margin-bottom: 12px;">
+          <canvas id="staffDapiDonut" height="180"></canvas>
+          <div style="position: absolute; top: 42%; left: 50%; transform: translate(-50%,-50%); text-align: center; pointer-events: none;">
+            <div style="font-size: 1.5rem; font-weight: 800; color: var(--text);">{{ breakdown['total'] }}</div>
+            <div style="font-size: 0.65rem; color: var(--muted); text-transform: uppercase;">DAPI Score</div>
+          </div>
+        </div>
         <div style="display: flex; flex-direction: column; gap: 12px;">
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.01); border-radius: 8px;">
             <span style="font-size: 0.85rem; color: var(--muted);">Exams (40m)</span>
@@ -472,6 +480,54 @@
     </div>
   </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  // Staff view SGPA Bar Chart
+  (function(){
+    const ctx = document.getElementById('staffSgpaChart');
+    if(!ctx) return;
+    const vals = [{{ student['sem1'] or 0 }},{{ student['sem2'] or 0 }},{{ student['sem3'] or 0 }},{{ student['sem4'] or 0 }},{{ student['sem5'] or 0 }},{{ student['sem6'] or 0 }},{{ student['sem7'] or 0 }},{{ student['sem8'] or 0 }}];
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['S1','S2','S3','S4','S5','S6','S7','S8'],
+        datasets: [{ label: 'SGPA', data: vals, backgroundColor: 'rgba(99,102,241,0.75)', borderColor: '#6366f1', borderWidth: 2, borderRadius: 6, borderSkipped: false }]
+      },
+      options: {
+        responsive: true,
+        animation: { duration: 1000 },
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { min: 0, max: 10, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', stepSize: 2 } },
+          x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+        }
+      }
+    });
+  })();
+
+  // Staff view DAPI Donut
+  (function(){
+    const ctx = document.getElementById('staffDapiDonut');
+    if(!ctx) return;
+    const penalty = {{ breakdown['penalty'] }};
+    const remaining = Math.max(0, 100 - {{ breakdown['total'] }});
+    const labels = ['Exams','Assignments','Attendance','Participation'];
+    const data = [{{ breakdown['exam_points'] }},{{ breakdown['assignment_points'] }},{{ breakdown['attendance_points'] }},{{ breakdown['participation_points'] }}];
+    const colors = ['#6366f1','#14b8a6','#f59e0b','#10b981'];
+    if(penalty > 0){ labels.push('Penalty'); data.push(penalty); colors.push('#ef4444'); }
+    labels.push('Remaining'); data.push(remaining); colors.push('rgba(255,255,255,0.05)');
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0, cutout: '72%' }] },
+      options: {
+        responsive: true,
+        animation: { duration: 1200 },
+        plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 8, font: { size: 10 }, boxWidth: 10 } } }
+      }
+    });
+  })();
+</script>
 
 <script>
   function openPreviewFromData(btn) {

@@ -25,7 +25,7 @@
       </button>
       <a href="/" class="btn" style="background: transparent;">Home</a>
       {% if session.get('role') %}
-        <a href="{{ '/student' if session['role'] == 'student' else '/staff' }}" class="btn">Dashboard</a>
+        <a href="{{ '/admin' if session['role'] == 'admin' else ('/student' if session['role'] == 'student' else '/staff') }}" class="btn">Dashboard</a>
         <a href="/logout" class="btn btn-danger" style="padding: 8px 16px;">
           <i data-lucide="log-out" size="16"></i>
           <span>Logout</span>
@@ -62,7 +62,7 @@
     const themeText = document.getElementById('theme-text');
     themeToggle.innerHTML = `
       <i data-lucide="${isLight ? 'moon' : 'sun'}" size="16"></i>
-      <span>${isLight ? 'Light Mode' : 'Dark Mode'}</span>
+      <span>${isLight ? 'Dark Mode' : 'Light Mode'}</span>
     `;
     
     localStorage.setItem('theme', theme);

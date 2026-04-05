@@ -3,21 +3,24 @@
 <div class="fade-in" style="display: flex; justify-content: center; align-items: center; min-height: 70vh;">
   <div class="card" style="width: 100%; max-width: 480px;">
     <div style="text-align: center; margin-bottom: 32px;">
-      <div style="display: inline-flex; padding: 16px; background: rgba(20, 184, 166, 0.1); border-radius: 20px; margin-bottom: 16px;">
-        <i data-lucide="shield-check" size="32" style="color: var(--accent)"></i>
+      <div style="display: inline-flex; padding: 16px; background: rgba(99, 102, 241, 0.1); border-radius: 20px; margin-bottom: 16px;">
+        <i data-lucide="user-plus" size="32" style="color: var(--primary)"></i>
       </div>
       <h2>Staff Enrollment</h2>
-      <p class="sub">Create your institutional administrator account.</p>
+      <p class="sub">Provision new faculty credentials for the DAPI system.</p>
     </div>
 
     <form method="post">
       <div class="field">
         <label>Institutional Email</label>
         <div style="position: relative;">
-          <input name="email" type="email" placeholder="name.staff@gmail.com" required>
+          <input name="email" type="email" placeholder="name.staff@gmail.com" required autofocus>
           <i data-lucide="mail" size="18" style="position: absolute; right: 12px; top: 14px; color: var(--muted)"></i>
         </div>
-        <p class="sub" style="font-size: 0.8rem; margin-top: 8px;">Must end with <b>.staff@gmail.com</b></p>
+        <p style="font-size: 0.75rem; color: var(--muted); margin-top: 8px; display: flex; align-items: center; gap: 4px;">
+          <i data-lucide="info" size="14"></i>
+          <span>Must end with <b>.staff@gmail.com</b></span>
+        </p>
       </div>
 
       <div class="field">
@@ -28,9 +31,9 @@
         </div>
       </div>
 
-      <button class="btn btn-teal" type="submit" style="width: 100%; margin-top: 12px;">
-        <span>Create Staff Account</span>
-        <i data-lucide="user-plus" size="18"></i>
+      <button class="btn btn-primary" type="submit" style="width: 100%; margin-top: 12px;">
+        <span>Provision Account</span>
+        <i data-lucide="shield-check" size="18"></i>
       </button>
 
       {% if message %}<div class="toast ok">{{ message }}</div>{% endif %}
@@ -40,10 +43,9 @@
     <div class="hr"></div>
 
     <div style="text-align: center;">
-      <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 16px;">Already have an account?</p>
-      <a class="btn" href="/login" style="width: 100%;">
-        <i data-lucide="log-in" size="16"></i>
-        <span>Sign In Instead</span>
+      <a class="btn" href="/admin" style="width: 100%; border-color: transparent;">
+        <i data-lucide="arrow-left" size="16"></i>
+        <span>Back to Admin Console</span>
       </a>
     </div>
   </div>

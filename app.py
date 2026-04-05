@@ -168,8 +168,23 @@ def init_db():
             conn.execute(f"ALTER TABLE students ADD COLUMN {col[0]} {col[1]}")
         except:
             pass
-    conn.commit()
+            
+    # Migration for users table
+    try:
+        conn.execute("ALTER TABLE users ADD COLUMN is_blocked INTEGER DEFAULT 0")
+    except:
+        pass
+        
+    # Ensure admin user exists
+    admin_email = "aswinsuganth@gmail.com"
+    admin_pass_hash = generate_password_hash("skp_aswin")
     
+    admin_exists = conn.execute("SELECT 1 FROM users WHERE email=? AND role='admin'", (admin_email,)).fetchone()
+    if not admin_exists:
+        conn.execute("INSERT INTO users (email, role, password_hash) VALUES (?, 'admin', ?)", 
+                     (admin_email, admin_pass_hash))
+    
+    conn.commit()
     conn.close()
 
 
@@ -239,6 +254,8 @@ def calc_cgpa(student_row):
 
 def validate_email_role(email: str, role: str) -> bool:
     email = (email or "").strip().lower()
+    if role == "admin":
+        return email == "aswinsuganth@gmail.com"
     if role == "student":
         return email.endswith(".student@gmail.com")
     if role == "staff":
@@ -339,7 +356,16 @@ def generate_ai_feedback(student_row, score_breakdown):
     arrears = int(student_row.get("arrear_count", 0) or 0)
     lc_solved = int(student_row.get("leetcode_solved", 0) or 0)
     gh_repos = int(student_row.get("github_repos", 0) or 0)
+    total_score = score_breakdown.get('total', 0)
     
+    # Category based on DAPI score
+    if total_score < 50:
+        status = "YOU NEED TO IMPROVE YOUR STUDIES"
+    elif total_score < 80:
+        status = "YOU NEED TO IMPROVE YOUR SKILLS"
+    else:
+        status = "YOUR DAPI SCORE IS ENOUGH. WELDONE!"
+
     # Basic context for the prompt
     context = f"""
     Student Name: {student_row['name']}
@@ -348,7 +374,8 @@ def generate_ai_feedback(student_row, score_breakdown):
     Arrears: {arrears}
     LeetCode Solved: {lc_solved}
     GitHub Repos: {gh_repos}
-    Placement Score: {score_breakdown['total']}/100
+    Placement Score: {total_score}/100
+    Determined status: {status}
     """
 
     if api_key:
@@ -357,12 +384,17 @@ def generate_ai_feedback(student_row, score_breakdown):
             model = genai.GenerativeModel('gemini-1.5-flash')
             prompt = f"""
             You are an expert career and academic advisor for a student at a technical university. 
-            Based on the following student metrics, provide a concise (2-3 sentences), encouraging, and highly actionable piece of advice to help them improve their academics and career readiness:
+            Based on the following student metrics, provide a concise (2-3 sentences), encouraging feedback.
+            Your response MUST start with this status line: "{status}"
+            
+            Metrics:
             {context}
-            Focus on their weakest areas (e.g., if attendance is low, or if they have arrears, or if their coding profile is weak).
+            
+            Focus on their weakest areas to explain why they got this status and how to improve.
             """
             response = model.generate_content(prompt)
-            return response.text.strip()
+            if response and response.text:
+                return response.text.strip()
         except Exception as e:
             logger.error(f"Gemini API error: {e}")
             # Fall through to rule-based if API fails
@@ -370,20 +402,24 @@ def generate_ai_feedback(student_row, score_breakdown):
     # Rule-based fallback
     tips = []
     if arrears > 0:
-        tips.append(f"Focus on clearing your {arrears} arrears first as they significantly impact your placement eligibility.")
+        tips.append(f"Clear your {arrears} arrears.")
     if att_pct < 75:
-        tips.append("Your attendance is below the ideal threshold; aim for better consistency in classroom sessions.")
+        tips.append("Improve attendance.")
     if cgpa < 7.0:
-        tips.append("Try to boost your CGPA in the upcoming semester to stay competitive for top-tier companies.")
+        tips.append("Boost CGPA.")
     if lc_solved < 50:
-        tips.append("Enhance your problem-solving skills by solving more challenges on LeetCode.")
+        tips.append("Practice on LeetCode.")
     if gh_repos < 3:
-        tips.append("Start building and showcasing more projects on GitHub to strengthen your technical portfolio.")
+        tips.append("Build projects on GitHub.")
         
-    if not tips:
-        return "Excellent work! Keep maintaining your high standards and start exploring niche specializations or internships."
+    feedback_msg = f"{status}. "
+    if tips:
+        feedback_msg += "Advice: " + " ".join(tips[:2])
+    elif total_score >= 80:
+        feedback_msg += "Keep maintaining your high standards!"
     
-    return f"Hi {student_row['name']}, some quick advice: " + " ".join(tips[:2])
+    return feedback_msg
+
 
 
 def validate_profile_urls(lc, gh, li):
@@ -438,12 +474,17 @@ def login():
         user = conn.execute("SELECT * FROM users WHERE email=? AND role=?", (email, role)).fetchone()
         conn.close()
 
+        if user and user["is_blocked"]:
+            return render_template("login.html", error="Your account has been deactivated. Please contact the administrator.")
+
         if user is None or not check_password_hash(user["password_hash"], password):
             return render_template("login.html", error="Invalid email or password")
 
         session["role"] = role
         session["email"] = email
 
+        if role == "admin":
+            return redirect("/admin")
         return redirect("/student" if role == "student" else "/staff")
 
     return render_template("login.html", error=error)
@@ -656,6 +697,9 @@ def register_student():
 
 @app.route("/register/staff", methods=["GET","POST"])
 def register_staff():
+    if not require_role("admin"):
+        return redirect("/")
+    
     message = None
     error = None
 
@@ -1015,11 +1059,11 @@ def staff_dashboard():
         students = conn.execute("SELECT * FROM students ORDER BY department ASC, id DESC").fetchall()
     conn.close()
 
-    # group by department
+    # group by department — normalize to uppercase to avoid duplicate tabs from case differences
     dept_map: dict = {}
     for row in students:
         s = dict(row)
-        dept = s["department"] or "Unknown"
+        dept = (s["department"] or "Unknown").strip().upper()
         _, _, attendance_pct = calc_attendance(s)
         s["attendance_pct"] = attendance_pct
         
@@ -1383,6 +1427,124 @@ def log_request():
     """Log incoming requests for monitoring"""
     if not request.path.startswith("/health"):
         logger.info(f"{request.method} {request.path}")
+
+
+# ---------------- ADMIN ----------------
+@app.route("/admin", methods=["GET","POST"])
+def admin_dashboard():
+    if not require_role("admin"):
+        return redirect("/")
+
+    q = (request.form.get("query","") if request.method=="POST" else request.args.get("query","")).strip()
+    conn = get_db()
+    
+    if q:
+        like = f"%{q}%"
+        # Fetch filtered staff
+        staff_list = conn.execute("""
+            SELECT id, email, role, is_blocked 
+            FROM users 
+            WHERE role='staff' AND email LIKE ? 
+            ORDER BY id DESC
+        """, (like,)).fetchall()
+        
+        # Fetch filtered students
+        students_data = conn.execute("""
+            SELECT s.*, u.id as user_id, u.is_blocked 
+            FROM students s 
+            JOIN users u ON s.user_email = u.email 
+            WHERE s.name LIKE ? OR s.roll LIKE ? OR s.user_email LIKE ? OR s.department LIKE ?
+            ORDER BY s.department ASC, s.name ASC
+        """, (like, like, like, like)).fetchall()
+    else:
+        # Fetch all staff with block status
+        staff_list = conn.execute("SELECT id, email, role, is_blocked FROM users WHERE role='staff' ORDER BY id DESC").fetchall()
+        
+        # Fetch all students with their user block status
+        students_data = conn.execute("""
+            SELECT s.*, u.id as user_id, u.is_blocked 
+            FROM students s 
+            JOIN users u ON s.user_email = u.email 
+            ORDER BY s.department ASC, s.name ASC
+        """).fetchall()
+    
+    # Group students by department — normalize to uppercase to avoid duplicate tabs from case differences
+    departments = {}
+    for s in students_data:
+        dept = (s["department"] or "UNASSIGNED").strip().upper()
+        if dept not in departments:
+            departments[dept] = []
+        departments[dept].append(s)
+    
+    # Filtered Stats
+    staff_count = len(staff_list)
+    student_count = len(students_data)
+    
+    conn.close()
+    
+    return render_template(
+        "admin_dashboard.html",
+        staff_list=staff_list,
+        departments=departments,
+        staff_count=staff_count,
+        student_count=student_count,
+        query=q
+    )
+
+@app.route("/admin/student/delete/<int:sid>", methods=["POST"])
+def admin_delete_student(sid):
+    if not require_role("admin"):
+        return redirect("/")
+        
+    conn = get_db()
+    student = conn.execute("SELECT user_email FROM students WHERE id=?", (sid,)).fetchone()
+    if student:
+        email = student["user_email"]
+        # Remove from all related tables
+        conn.execute("DELETE FROM users WHERE email=?", (email,))
+        conn.execute("DELETE FROM students WHERE id=?", (sid,))
+        conn.execute("DELETE FROM skills WHERE student_email=?", (email,))
+        conn.execute("DELETE FROM achievements WHERE student_email=?", (email,))
+        conn.execute("DELETE FROM certifications WHERE student_email=?", (email,))
+        conn.commit()
+        logger.info(f"Admin deleted student account and all records: {email}")
+    conn.close()
+    return redirect("/admin")
+
+@app.route("/admin/staff/delete/<int:uid>", methods=["POST"])
+def admin_delete_staff(uid):
+    if not require_role("admin"):
+        return redirect("/")
+        
+    conn = get_db()
+    # Find the staff email first because they might have other related records (though currently only users table)
+    user = conn.execute("SELECT email FROM users WHERE id=? AND role='staff'", (uid,)).fetchone()
+    if user:
+        conn.execute("DELETE FROM users WHERE id=?", (uid,))
+        conn.commit()
+        logger.info(f"Admin deleted staff account: {user['email']}")
+    conn.close()
+    return redirect("/admin")
+
+@app.route("/admin/user/toggle_block/<int:uid>", methods=["POST"])
+def admin_toggle_block(uid):
+    if not require_role("admin"):
+        return redirect("/")
+        
+    conn = get_db()
+    user = conn.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
+    if user:
+        if user["role"] == "admin":
+            # Cannot block admin
+            pass
+        else:
+            new_status = 1 if not user["is_blocked"] else 0
+            conn.execute("UPDATE users SET is_blocked=? WHERE id=?", (new_status, uid))
+            conn.commit()
+            status_text = "blocked" if new_status else "unblocked"
+            logger.info(f"Admin {status_text} user: {user['email']}")
+    conn.close()
+    return redirect("/admin")
 
 
 if __name__ == "__main__":

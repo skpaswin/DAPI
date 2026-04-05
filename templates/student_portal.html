@@ -318,23 +318,11 @@
           </div>
         </div>
 
-        <!-- SGPA Chart moved here -->
+        <!-- SGPA Chart - Chart.js animated bar -->
         <div style="margin-bottom: 32px;">
           <div class="card" style="padding: 24px; background: rgba(255,255,255,0.01);">
             <h3 style="margin-bottom: 20px; font-size: 1rem; color: var(--muted);">Semester Grade Point Average (SGPA)</h3>
-            <div style="display: flex; align-items: flex-end; height: 230px; gap: 12px; padding-bottom: 20px; padding-top: 40px; border-bottom: 1px solid var(--border);">
-              {% set sems = [student.sem1, student.sem2, student.sem3, student.sem4, student.sem5, student.sem6, student.sem7, student.sem8] %}
-              {% for s in sems %}
-                {% set h = (s or 0) * 18 %}
-                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                  {% set container_style = 'style="position: relative; width: 100%; max-width: 40px; background: var(--primary); border-radius: 4px 4px 0 0; transition: height 0.3s ease; height: ' ~ h ~ 'px;"' %}
-                  <div {{ container_style | safe }}>
-                    <span style="position: absolute; top: -25px; left: 50%; transform: translateX(-50%); font-size: 0.85rem; font-weight: 700; color: var(--text);">{{ s or '0' }}</span>
-                  </div>
-                  <span style="font-size: 0.75rem; color: var(--muted); font-weight: 600;">Sem {{ loop.index }}</span>
-                </div>
-              {% endfor %}
-            </div>
+            <canvas id="sgpaChart" height="110"></canvas>
           </div>
         </div>
 
@@ -369,6 +357,14 @@
           <div style="padding: 12px; background: rgba(99, 102, 241, 0.05); border-radius: 8px; border: 1px solid var(--primary);">
             <div style="font-size: 0.75rem; color: var(--primary); margin-bottom: 4px;">12th Cutoff</div>
             <div style="font-weight: 800; color: white;">{{ student['hsc_cutoff'] or '0.00' }}</div>
+          </div>
+        </div>
+
+        <!-- HSC Marks Chart -->
+        <div style="margin: 8px 0 24px;">
+          <div class="card" style="padding: 20px; background: rgba(255,255,255,0.01);">
+            <h4 style="margin-bottom: 16px; font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;">HSC Subject Marks Comparison</h4>
+            <canvas id="hscChart" height="100"></canvas>
           </div>
         </div>
 
@@ -635,10 +631,18 @@
     <!-- RIGHT SIDEBAR (Score Breakdown) -->
     <div class="fade-in" style="position: sticky; top: 24px;">
       <div class="card" style="margin-bottom: 24px;">
-        <h3 style="font-size: 1.25rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+        <h3 style="font-size: 1.25rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
           <i data-lucide="bar-chart-3" size="18" style="color: var(--primary)"></i>
           DAPI Score Breakdown
         </h3>
+        <!-- DAPI Donut Chart -->
+        <div style="position: relative; margin-bottom: 12px;">
+          <canvas id="dapiDonut" height="190"></canvas>
+          <div style="position: absolute; top: 42%; left: 50%; transform: translate(-50%,-50%); text-align: center; pointer-events: none;">
+            <div style="font-size: 1.6rem; font-weight: 800; color: var(--text);">{{ breakdown['total'] }}</div>
+            <div style="font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em;">DAPI Score</div>
+          </div>
+        </div>
         <div style="display: flex; flex-direction: column; gap: 12px;">
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.01); border-radius: 8px;">
             <span style="font-size: 0.85rem; color: var(--muted);">Exams (40m)</span>
@@ -693,6 +697,91 @@
     <div style="flex: 1; overflow: auto; padding: 20px; text-align: center;" id="modal-body"></div>
   </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  // SGPA Bar Chart
+  (function(){
+    const ctx = document.getElementById('sgpaChart');
+    if(!ctx) return;
+    const vals = [{{ student['sem1'] or 0 }},{{ student['sem2'] or 0 }},{{ student['sem3'] or 0 }},{{ student['sem4'] or 0 }},{{ student['sem5'] or 0 }},{{ student['sem6'] or 0 }},{{ student['sem7'] or 0 }},{{ student['sem8'] or 0 }}];
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Sem 1','Sem 2','Sem 3','Sem 4','Sem 5','Sem 6','Sem 7','Sem 8'],
+        datasets: [{
+          label: 'SGPA',
+          data: vals,
+          backgroundColor: 'rgba(99,102,241,0.75)',
+          borderColor: '#6366f1',
+          borderWidth: 2,
+          borderRadius: 8,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        animation: { duration: 1000, easing: 'easeOutCubic' },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'SGPA: ' + c.raw } } },
+        scales: {
+          y: { min: 0, max: 10, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', stepSize: 2 } },
+          x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+        }
+      }
+    });
+  })();
+
+  // DAPI Score Donut
+  (function(){
+    const ctx = document.getElementById('dapiDonut');
+    if(!ctx) return;
+    const penalty = {{ breakdown['penalty'] }};
+    const remaining = Math.max(0, 100 - {{ breakdown['total'] }});
+    const labels = ['Exams','Assignments','Attendance','Participation'];
+    const data = [{{ breakdown['exam_points'] }},{{ breakdown['assignment_points'] }},{{ breakdown['attendance_points'] }},{{ breakdown['participation_points'] }}];
+    const colors = ['#6366f1','#14b8a6','#f59e0b','#10b981'];
+    if(penalty > 0){ labels.push('Penalty'); data.push(penalty); colors.push('#ef4444'); }
+    labels.push('Remaining'); data.push(remaining); colors.push('rgba(255,255,255,0.05)');
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0, cutout: '72%' }] },
+      options: {
+        responsive: true,
+        animation: { duration: 1200, easing: 'easeOutQuart' },
+        plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 8, font: { size: 10 }, boxWidth: 10 } } }
+      }
+    });
+  })();
+
+  // HSC Marks Horizontal Bar
+  (function(){
+    const ctx = document.getElementById('hscChart');
+    if(!ctx) return;
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Physics','Chemistry','Maths','CS','Biology'],
+        datasets: [{
+          label: 'Marks (%)',
+          data: [{{ student['physics_marks'] or 0 }},{{ student['chemistry_marks'] or 0 }},{{ student['maths_marks'] or 0 }},{{ student['cs_marks'] or 0 }},{{ student['biology_marks'] or 0 }}],
+          backgroundColor: ['rgba(99,102,241,0.75)','rgba(20,184,166,0.75)','rgba(245,158,11,0.75)','rgba(16,185,129,0.75)','rgba(244,63,94,0.75)'],
+          borderRadius: 6,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        animation: { duration: 900 },
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', callback: v => v + '%' } },
+          y: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+        }
+      }
+    });
+  })();
+</script>
 
 <script>
   function openPreviewFromData(btn) {

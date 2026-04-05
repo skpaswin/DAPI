@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="fade-in">
+  <!-- Header Section -->
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px;">
+    <div>
+      <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px;">Admin Console</h1>
+      <p style="color: var(--muted); font-size: 1.1rem;">Welcome back, Administrator. System status is optimal.</p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+      <a href="/register/staff" class="btn btn-primary">
+        <i data-lucide="user-plus" size="18"></i>
+        <span>Add New Staff</span>
+      </a>
+      <button onclick="window.location.reload()" class="btn">
+        <i data-lucide="refresh-cw" size="18"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Stats -->
+  <div class="kpi">
+    <div class="k">
+      <div class="t">Total Staff</div>
+      <div class="v">{{ staff_count }}</div>
+      <div style="margin-top: 12px; font-size: 0.8rem; color: var(--accent); font-weight: 600; display: flex; align-items: center; gap: 4px;">
+        <i data-lucide="shield" size="14"></i>
+        <span>Active Faculty</span>
+      </div>
+    </div>
+    <div class="k">
+      <div class="t">Total Students</div>
+      <div class="v">{{ student_count }}</div>
+      <div style="margin-top: 12px; font-size: 0.8rem; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 4px;">
+        <i data-lucide="users" size="14"></i>
+        <span>Enrolled</span>
+      </div>
+    </div>
+    <div class="k">
+      <div class="t">System Health</div>
+      <div class="v" style="color: var(--accent);">99.9%</div>
+      <div style="margin-top: 12px; font-size: 0.8rem; color: var(--muted); font-weight: 600;">Standard Operation</div>
+    </div>
+  </div>
+  
+  <!-- Search Directory -->
+  <div class="card" style="margin-bottom: 40px; padding: 20px; border: 1px solid var(--border); background: linear-gradient(145deg, var(--card), var(--glass));">
+    <form action="/admin" method="get" style="display: flex; gap: 12px; align-items: center;">
+      <div style="position: relative; flex: 1;">
+        <i data-lucide="search" size="18" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--muted);"></i>
+        <input type="text" name="query" value="{{ query or '' }}" placeholder="Search staff or students by name, email, roll, or department..." 
+               style="width: 100%; padding: 14px 16px 14px 48px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 1rem; transition: border-color 0.2s;">
+      </div>
+      <button type="submit" class="btn btn-primary" style="height: 52px; padding: 0 24px;">
+        <i data-lucide="filter" size="18"></i>
+        <span>Search</span>
+      </button>
+      {% if query %}
+      <a href="/admin" class="btn" style="height: 52px; width: 52px; display: flex; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: none;" title="Clear Search">
+        <i data-lucide="x" size="20"></i>
+      </a>
+      {% endif %}
+    </form>
+    {% if query %}
+    <div style="margin-top: 12px; font-size: 0.85rem; color: var(--muted); padding: 0 8px;">
+      Showing results for "<span style="color: var(--primary); font-weight: 600;">{{ query }}</span>" &mdash; 
+      Found {{ staff_count }} staff and {{ student_count }} students.
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Analytics Charts -->
+  {% if not query %}
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 40px;">
+    <div class="card" style="padding: 24px;">
+      <h3 style="font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="pie-chart" size="16" style="color: var(--primary)"></i>
+        Students by Department
+      </h3>
+      <canvas id="adminDeptChart" height="220"></canvas>
+    </div>
+    <div class="card" style="padding: 24px;">
+      <h3 style="font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="shield" size="16" style="color: var(--accent)"></i>
+        User Access Status
+      </h3>
+      <canvas id="adminAccessChart" height="220"></canvas>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="grid" style="grid-template-columns: 1fr;">
+    <!-- Staff Management Section -->
+    <div class="card" style="margin-bottom: 32px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h2 style="margin-bottom: 4px;">Staff Members</h2>
+          <p class="sub">Manage faculty credentials and access levels</p>
+        </div>
+        <i data-lucide="users" size="24" style="color: var(--primary); opacity: 0.5;"></i>
+      </div>
+
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Email Address</th>
+              <th>Role</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for staff in staff_list %}
+            <tr {% if staff.is_blocked %}style="opacity: 0.6;"{% endif %}>
+              <td style="font-weight: 700; color: var(--primary);">#{{ staff.id }}</td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--glass); display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="user" size="14" style="color: var(--primary);"></i>
+                  </div>
+                  <span style="font-weight: 600;">{{ staff.email }}</span>
+                </div>
+              </td>
+              <td>
+                {% if staff.is_blocked %}
+                  <span class="badge" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); border: none;">BLOCKED</span>
+                {% else %}
+                  <span class="badge" style="background: rgba(99, 102, 241, 0.1); color: var(--primary); border: none;">STAFF</span>
+                {% endif %}
+              </td>
+              <td style="text-align: right; display: flex; gap: 8px; justify-content: flex-end;">
+                <form action="/admin/user/toggle_block/{{ staff.id }}" method="post" style="display: inline;">
+                  <button type="submit" class="btn {% if staff.is_blocked %}btn-teal{% else %}btn-danger{% endif %}" style="padding: 6px 12px; font-size: 0.8rem;">
+                    <i data-lucide="{% if staff.is_blocked %}unlock{% else %}lock{% endif %}" size="14"></i>
+                    <span>{% if staff.is_blocked %}Unblock{% else %}Block{% endif %}</span>
+                  </button>
+                </form>
+                <form action="/admin/staff/delete/{{ staff.id }}" method="post" style="display: inline;" onsubmit="return confirm('Archive this staff member? This action cannot be undone.')">
+                  <button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8rem; background: transparent; border-color: rgba(239, 68, 68, 0.2);">
+                    <i data-lucide="trash-2" size="14"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center; padding: 40px; color: var(--muted);">No staff members found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Student Records Organized by Department -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h2 style="margin-bottom: 4px;">Student Directory</h2>
+          <p class="sub">Students categorized by academic department</p>
+        </div>
+        <i data-lucide="layers" size="24" style="color: var(--accent); opacity: 0.5;"></i>
+      </div>
+
+      {% if not departments %}
+        <div style="text-align: center; padding: 40px; color: var(--muted); background: var(--glass); border-radius: 16px;">
+          No students registered in the system yet.
+        </div>
+      {% else %}
+        {% for dept, dept_students in departments.items() %}
+        <div style="margin-bottom: 32px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 0 8px;">
+            <div style="width: 4px; height: 18px; background: var(--accent); border-radius: 2px;"></div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text);">{{ dept }}</h3>
+            <span class="badge" style="font-size: 0.7rem;">{{ dept_students|length }} Students</span>
+          </div>
+
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th style="width: 150px;">Roll No</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th style="text-align: right;">Access Control</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for student in dept_students %}
+                <tr {% if student.is_blocked %}style="opacity: 0.6;"{% endif %}>
+                  <td style="font-family: monospace; font-weight: 700; color: var(--accent);">{{ student.roll }}</td>
+                  <td>
+                    <div style="font-weight: 600;">{{ student.name }}</div>
+                    <div style="font-size: 0.75rem; color: var(--muted);">{{ student.student_id }}</div>
+                  </td>
+                  <td style="color: var(--muted); font-size: 0.9rem;">{{ student.user_email }}</td>
+                  <td style="text-align: right;">
+                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px;">
+                      <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 700;">
+                        {% if student.is_blocked %}
+                          <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 10px var(--danger);"></div>
+                          <span style="color: var(--danger);">BLOCKED</span>
+                        {% else %}
+                          <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent);"></div>
+                          <span style="color: var(--accent);">ACTIVE</span>
+                        {% endif %}
+                      </div>
+                      
+                      <form action="/admin/user/toggle_block/{{ student.user_id }}" method="post" style="display: inline;">
+                        <button type="submit" class="btn {% if student.is_blocked %}btn-teal{% else %}btn-danger{% endif %}" style="padding: 6px 12px; font-size: 0.75rem; min-width: 90px;">
+                          <i data-lucide="{% if student.is_blocked %}unlock{% else %}lock{% endif %}" size="14"></i>
+                          <span>{% if student.is_blocked %}Unblock{% else %}Block{% endif %}</span>
+                        </button>
+                      </form>
+                      
+                      <form action="/admin/student/delete/{{ student.id }}" method="post" style="display: inline;" onsubmit="return confirm('PERMANENTLY DELETE student record? This will remove all academic data and login credentials.')">
+                        <button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.75rem; background: transparent; border-color: rgba(239, 68, 68, 0.2);">
+                          <i data-lucide="trash-2" size="14"></i>
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  // Department Distribution Doughnut
+  (function(){
+    const ctx = document.getElementById('adminDeptChart');
+    if(!ctx) return;
+    const deptLabels = [{% for dept in departments.keys() %}'{{ dept }}',{% endfor %}];
+    const deptCounts = [{% for students in departments.values() %}{{ students|length }},{% endfor %}];
+    const palette = ['#6366f1','#14b8a6','#f59e0b','#10b981','#ef4444','#8b5cf6','#f97316','#06b6d4'];
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: deptLabels,
+        datasets: [{ data: deptCounts, backgroundColor: palette.slice(0, deptLabels.length), borderWidth: 0, cutout: '60%' }]
+      },
+      options: {
+        responsive: true,
+        animation: { duration: 1000 },
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 12, font: { size: 11 }, boxWidth: 12 } },
+          tooltip: { callbacks: { label: c => c.label + ': ' + c.raw + ' students' } }
+        }
+      }
+    });
+  })();
+
+  // Active vs Blocked Users Pie
+  (function(){
+    const ctx = document.getElementById('adminAccessChart');
+    if(!ctx) return;
+    {% set ns = namespace(blocked_s=0, active_s=0, blocked_f=0, active_f=0) %}
+    {% for students in departments.values() %}
+      {% for s in students %}
+        {% if s.is_blocked %}{% set ns.blocked_s = ns.blocked_s + 1 %}{% else %}{% set ns.active_s = ns.active_s + 1 %}{% endif %}
+      {% endfor %}
+    {% endfor %}
+    {% for staff in staff_list %}
+      {% if staff.is_blocked %}{% set ns.blocked_f = ns.blocked_f + 1 %}{% else %}{% set ns.active_f = ns.active_f + 1 %}{% endif %}
+    {% endfor %}
+    const activeTotal = {{ ns.active_s + ns.active_f }};
+    const blockedTotal = {{ ns.blocked_s + ns.blocked_f }};
+    new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ['Active Users', 'Blocked Users'],
+        datasets: [{ data: [activeTotal, blockedTotal], backgroundColor: ['#14b8a6', '#ef4444'], borderWidth: 0 }]
+      },
+      options: {
+        responsive: true,
+        animation: { duration: 1000 },
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 12, font: { size: 11 }, boxWidth: 12 } },
+          tooltip: { callbacks: { label: c => c.label + ': ' + c.raw } }
+        }
+      }
+    });
+  })();
+</script>
+{% endblock %}

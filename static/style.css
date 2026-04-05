@@ -37,6 +37,10 @@ body.light-theme {
   --nav-bg: #ffffff;
   --input-bg: #ffffff;
   --card-gradient: linear-gradient(135deg, #ffffff, #f8fafc);
+  --danger-text: #b91c1c; /* Darker red for light mode */
+}
+:root {
+  --danger-text: #fca5a5; /* Default light pink for dark mode */
 }
 
 /* Custom Scrollbar */
@@ -203,7 +207,7 @@ a {
 .btn-danger {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  color: #fca5a5;
+  color: var(--danger-text);
 }
 
 .btn-danger:hover {
@@ -243,7 +247,7 @@ a {
   font-size: 1.75rem;
   font-weight: 700;
   margin-bottom: 8px;
-  color: white;
+  color: var(--text);
 }
 
 .sub {
@@ -277,10 +281,15 @@ input, select, textarea {
   transition: all 0.2s ease;
 }
 
+option {
+  background: var(--bg);
+  color: var(--text);
+}
+
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--primary);
-  background: rgba(17, 24, 39, 0.8);
+  background: var(--input-bg);
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
 }
 
@@ -358,7 +367,7 @@ input:focus, select:focus, textarea:focus {
 .k .v {
   font-size: 1.5rem;
   font-weight: 800;
-  color: white;
+  color: var(--text);
   margin-top: 4px;
 }
 
