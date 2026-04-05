@@ -266,30 +266,35 @@ def validate_email_role(email: str, role: str) -> bool:
 def get_score_breakdown(conn, student_email: str, student_row):
     student_row = dict(student_row)
     
-    # 1. Exams (40% mapped from CGPA)
+    # 1. Exams (30% mapped from CGPA - Scale out of 3)
     cgpa = calc_cgpa(student_row) or 0.0
-    exam_points = (cgpa / 10.0) * 40.0
-    
-    # 2. Assignments (30% mapped from assignments_score)
-    assign_score = safe_float(student_row.get("assignments_score", 0), 0.0)
-    assignment_points = (assign_score / 100.0) * 30.0
-    
-    # 3. Attendance (20% mapped from attendance percentage)
-    _, _, att_pct = calc_attendance(student_row)
-    attendance_points = (att_pct / 100.0) * 20.0
-    
-    # 4. Participation (10% mapped from participation_score)
-    part_score = safe_float(student_row.get("participation_score", 0), 0.0)
-    participation_points = (part_score / 100.0) * 10.0
-    
-    # Arrears penalty (optional deduction outside the 100% scale)
-    arrears = max(0, int(student_row.get("arrear_count", 0) or 0))
-    penalty = min(40.0, arrears * 10.0)
+    exam_points = (cgpa / 10.0) * 3.0
 
-    total = max(0.0, min(100.0, exam_points + assignment_points + attendance_points + participation_points - penalty))
+    # 1.5. HSC Cutoff (10% mapped from HSC - Scale out of 1. Max 200)
+    hsc_val = safe_float(student_row.get("hsc_cutoff", 0), 0.0)
+    hsc_points = (min(200.0, hsc_val) / 200.0) * 1.0
+    
+    # 2. Assignments (30% mapped from assignments_score - Scale out of 3)
+    assign_score = safe_float(student_row.get("assignments_score", 0), 0.0)
+    assignment_points = (assign_score / 100.0) * 3.0
+    
+    # 3. Attendance (20% mapped from attendance percentage - Scale out of 2)
+    _, _, att_pct = calc_attendance(student_row)
+    attendance_points = (att_pct / 100.0) * 2.0
+    
+    # 4. Participation (10% mapped from participation_score - Scale out of 1)
+    part_score = safe_float(student_row.get("participation_score", 0), 0.0)
+    participation_points = (part_score / 100.0) * 1.0
+    
+    # Arrears penalty (optional deduction outside the 100% scale - Max 4.0)
+    arrears = max(0, int(student_row.get("arrear_count", 0) or 0))
+    penalty = min(4.0, arrears * 1.0)
+
+    total = max(0.0, min(10.0, exam_points + hsc_points + assignment_points + attendance_points + participation_points - penalty))
     
     return {
         "exam_points": round(float(exam_points), 2),
+        "hsc_points": round(float(hsc_points), 2),
         "assignment_points": round(float(assignment_points), 2),
         "attendance_points": round(float(attendance_points), 2),
         "participation_points": round(float(participation_points), 2),
@@ -359,9 +364,9 @@ def generate_ai_feedback(student_row, score_breakdown):
     total_score = score_breakdown.get('total', 0)
     
     # Category based on DAPI score
-    if total_score < 50:
+    if total_score < 5.0:
         status = "YOU NEED TO IMPROVE YOUR STUDIES"
-    elif total_score < 80:
+    elif total_score < 8.0:
         status = "YOU NEED TO IMPROVE YOUR SKILLS"
     else:
         status = "YOUR DAPI SCORE IS ENOUGH. WELDONE!"
@@ -374,7 +379,7 @@ def generate_ai_feedback(student_row, score_breakdown):
     Arrears: {arrears}
     LeetCode Solved: {lc_solved}
     GitHub Repos: {gh_repos}
-    Placement Score: {total_score}/100
+    Placement Score: {total_score}/10
     Determined status: {status}
     """
 
@@ -415,7 +420,7 @@ def generate_ai_feedback(student_row, score_breakdown):
     feedback_msg = f"{status}. "
     if tips:
         feedback_msg += "Advice: " + " ".join(tips[:2])
-    elif total_score >= 80:
+    elif total_score >= 8.0:
         feedback_msg += "Keep maintaining your high standards!"
     
     return feedback_msg
@@ -1141,11 +1146,11 @@ def staff_student_portal(sid):
             elif b_marks > 0:
                 third_sub = b_marks
 
-            hsc_cutoff_str = request.form.get("hsc_cutoff", "").strip()
-            if not hsc_cutoff_str and (p_marks > 0 or third_sub > 0 or m_marks > 0):
-                hsc_cutoff = round(m_marks + (p_marks / 2.0) + (third_sub / 2.0), 2)
+            computed_cutoff = round(m_marks + (p_marks / 2.0) + (third_sub / 2.0), 2)
+            if computed_cutoff > 0:
+                hsc_cutoff = computed_cutoff
             else:
-                hsc_cutoff = safe_float(hsc_cutoff_str, 0.0)
+                hsc_cutoff = safe_float(request.form.get("hsc_cutoff", ""), 0.0)
                 
             school_name = request.form.get("school_name", "").strip()
 
