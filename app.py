@@ -8,7 +8,7 @@ import requests, re
 import google.generativeai as genai
 
 # Configure logging for 24/7 operation
-log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+log_dir = os.environ.get("LOG_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs"))
 os.makedirs(log_dir, exist_ok=True)
 
 logging.basicConfig(
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dapi_secret_key_dev_only")
-app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads', 'certificates')
+app.config['UPLOAD_FOLDER'] = os.environ.get("UPLOAD_FOLDER", os.path.join('static', 'uploads', 'certificates'))
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 

@@ -2,14 +2,23 @@ services:
   - type: web
     name: dapi-app
     env: python
+    plan: free
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn app:app"
+    startCommand: "gunicorn app:app --workers 1 --bind 0.0.0.0:$PORT --timeout 120"
     envVars:
       - key: PYTHON_VERSION
-        value: 3.10.0
+        value: "3.11.0"
+      - key: SECRET_KEY
+        generateValue: true
       - key: DB_PATH
         value: /var/data/database.db
+      - key: UPLOAD_FOLDER
+        value: /var/data/uploads/certificates
+      - key: LOG_DIR
+        value: /var/data/logs
+      - key: GEMINI_API_KEY
+        sync: false   # Set this manually in Render dashboard
     disk:
-      name: dapi-db-data
+      name: dapi-persistent-data
       mountPath: /var/data
       sizeGB: 1
