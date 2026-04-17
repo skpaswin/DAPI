@@ -77,14 +77,18 @@
         <i data-lucide="pie-chart" size="16" style="color: var(--primary)"></i>
         Students by Department
       </h3>
-      <canvas id="adminDeptChart" height="220"></canvas>
+      <div style="max-width: 280px; margin: 0 auto;">
+        <canvas id="adminDeptChart" height="220"></canvas>
+      </div>
     </div>
     <div class="card" style="padding: 24px;">
       <h3 style="font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
         <i data-lucide="shield" size="16" style="color: var(--accent)"></i>
         User Access Status
       </h3>
-      <canvas id="adminAccessChart" height="220"></canvas>
+      <div style="max-width: 280px; margin: 0 auto;">
+        <canvas id="adminAccessChart" height="220"></canvas>
+      </div>
     </div>
   </div>
   {% endif %}
