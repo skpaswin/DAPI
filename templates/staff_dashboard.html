@@ -79,11 +79,11 @@
               </div>
 
               <div class="actions" style="display: flex; gap: 8px;">
-                <a href="/staff/student/{{ s['id'] }}?tab=profile" class="btn btn-primary" style="padding: 8px 14px;">
+                <a href="/staff/student/{{ s['user_email'] }}?tab=profile" class="btn btn-primary" style="padding: 8px 14px;">
                   <i data-lucide="pencil" size="14"></i>
                   <span>Edit Student</span>
                 </a>
-                <a href="/staff/student/{{ s['id'] }}" class="btn" style="padding: 8px 14px;">
+                <a href="/staff/student/{{ s['user_email'] }}" class="btn" style="padding: 8px 14px;">
                   <i data-lucide="external-link" size="14"></i>
                   <span>View Profile</span>
                 </a>

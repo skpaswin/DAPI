@@ -130,13 +130,13 @@
                 {% endif %}
               </td>
               <td style="text-align: right; display: flex; gap: 8px; justify-content: flex-end;">
-                <form action="/admin/user/toggle_block/{{ staff.id }}" method="post" style="display: inline;">
+                <form action="/admin/user/toggle_block/{{ staff.email }}" method="post" style="display: inline;">
                   <button type="submit" class="btn {% if staff.is_blocked %}btn-teal{% else %}btn-danger{% endif %}" style="padding: 6px 12px; font-size: 0.8rem;">
                     <i data-lucide="{% if staff.is_blocked %}unlock{% else %}lock{% endif %}" size="14"></i>
                     <span>{% if staff.is_blocked %}Unblock{% else %}Block{% endif %}</span>
                   </button>
                 </form>
-                <form action="/admin/staff/delete/{{ staff.id }}" method="post" style="display: inline;" onsubmit="return confirm('Archive this staff member? This action cannot be undone.')">
+                <form action="/admin/staff/delete/{{ staff.email }}" method="post" style="display: inline;" onsubmit="return confirm('Archive this staff member? This action cannot be undone.')">
                   <button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8rem; background: transparent; border-color: rgba(239, 68, 68, 0.2);">
                     <i data-lucide="trash-2" size="14"></i>
                   </button>
@@ -207,14 +207,14 @@
                         {% endif %}
                       </div>
                       
-                      <form action="/admin/user/toggle_block/{{ student.user_id }}" method="post" style="display: inline;">
+                      <form action="/admin/user/toggle_block/{{ student.user_email }}" method="post" style="display: inline;">
                         <button type="submit" class="btn {% if student.is_blocked %}btn-teal{% else %}btn-danger{% endif %}" style="padding: 6px 12px; font-size: 0.75rem; min-width: 90px;">
                           <i data-lucide="{% if student.is_blocked %}unlock{% else %}lock{% endif %}" size="14"></i>
                           <span>{% if student.is_blocked %}Unblock{% else %}Block{% endif %}</span>
                         </button>
                       </form>
                       
-                      <form action="/admin/student/delete/{{ student.id }}" method="post" style="display: inline;" onsubmit="return confirm('PERMANENTLY DELETE student record? This will remove all academic data and login credentials.')">
+                      <form action="/admin/student/delete/{{ student.user_email }}" method="post" style="display: inline;" onsubmit="return confirm('PERMANENTLY DELETE student record? This will remove all academic data and login credentials.')">
                         <button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.75rem; background: transparent; border-color: rgba(239, 68, 68, 0.2);">
                           <i data-lucide="trash-2" size="14"></i>
                         </button>
