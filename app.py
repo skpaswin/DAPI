@@ -275,7 +275,10 @@ def require_role(role):
 @app.route("/")
 def index():
     if session.get("role"):
-        return redirect("/student" if session["role"] == "student" else "/staff")
+        role = session["role"]
+        if role == "admin":
+            return redirect("/admin")
+        return redirect("/student" if role == "student" else "/staff")
     return render_template("index.html")
 
 
