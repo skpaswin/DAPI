@@ -18,3 +18,5 @@ services:
         sync: false   # Paste your service account JSON here in Render dashboard
       - key: GEMINI_API_KEY
         sync: false   # Set this manually in Render dashboard
+      - key: PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION
+        value: "python"
